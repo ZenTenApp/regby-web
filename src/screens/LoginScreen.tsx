@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react';
 
 import { Page } from '@/components/Layout';
 import { Logo } from '@/components/Logo';
+import { ICON_SIZE } from '@/components/icon';
 import { ROLES, ROLE_ORDER, type Role } from '@/components/roles';
 import { errorMessage } from '@/lib/errors';
 import { useAction } from '@/lib/use-action';
@@ -48,7 +49,7 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
               aria-checked={role === option}
               onClick={() => onRole(option)}
             >
-              <Icon size={24} />
+              <Icon size={ICON_SIZE} />
               {label}
             </button>
           );

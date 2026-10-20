@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { Spinner } from '@/components/Spinner';
+import { ICON_SIZE } from '@/components/icon';
 import { CLIPBOARD_BLOCKED_TEXT } from '@/lib/clipboard';
 import { useAction } from '@/lib/use-action';
 import { regbyErrorText } from '@/services/regby/protocol';
@@ -42,6 +43,8 @@ export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: Me
         </label>
         <textarea
           id="content"
+          // The merchant came here to type; the text field is the whole task.
+          autoFocus
           value={draft}
           placeholder="Input text here..."
           disabled={busy}
@@ -53,12 +56,12 @@ export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: Me
         <div className="field-actions">
           {draft !== '' && (
             <button type="button" className="chip" disabled={busy} onClick={() => onDraft('')}>
-              <X size={18} />
+              <X size={ICON_SIZE} />
               Clear
             </button>
           )}
           <button type="button" className="chip" disabled={busy} onClick={() => void paste()}>
-            <ClipboardPaste size={18} />
+            <ClipboardPaste size={ICON_SIZE} />
             Paste
           </button>
         </div>
@@ -73,7 +76,7 @@ export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: Me
           disabled={busy}
           onClick={() => void run(draft)}
         >
-          {busy && <Spinner size={26} />}
+          {busy && <Spinner />}
           {busy ? 'Generating…' : 'Generate Code'}
         </button>
       </div>

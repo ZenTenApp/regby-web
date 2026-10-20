@@ -51,7 +51,7 @@ export function CustomerRedeemScreen({ onRedeem, onScanned, onBack }: CustomerRe
 
       {busy && (
         <p className="status">
-          <Spinner size={20} />
+          <Spinner />
           Redeeming…
         </p>
       )}

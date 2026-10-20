@@ -29,10 +29,16 @@
   --scanner-bg: #d9d9d9;
   --scanner-bracket: #000;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  /* Width of the button column, from the Figma (392 px buttons). */
-  --column: 392px;
+  /* Type scale: the small sizes repeat across many blocks, so a rescale is
+     one edit here and paired elements (hint and note) cannot drift apart. */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  /* Width of the button column, scaled down from the Figma's 392 px. */
+  --column: 320px;
   --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 4px 16px rgb(16 24 40 / 6%);
 
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -67,17 +73,17 @@ textarea {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  gap: 16px;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
 }
 
 .card {
   width: 100%;
-  max-width: 560px;
+  max-width: 420px;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 40px 56px;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
 }
@@ -92,7 +98,7 @@ textarea {
 
 .footer {
   color: var(--faint);
-  font-size: 14px;
+  font-size: var(--text-xs);
 }
 
 @media (max-width: 520px) {
@@ -102,7 +108,7 @@ textarea {
   }
 
   .card {
-    padding: 24px 20px;
+    padding: 22px 18px;
   }
 }
 
@@ -113,19 +119,24 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .role-badge {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 22px;
+  gap: 10px;
+  font-size: 17px;
+}
+
+.role-icon svg {
+  width: 55%;
+  height: 55%;
 }
 
 .role-icon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -137,12 +148,15 @@ textarea {
 .back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 4px;
+  gap: 4px;
+  /* 40 px hit area without changing how it sits in the header. */
+  min-height: 40px;
+  margin: 0 -8px;
+  padding: 0 8px;
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 18px;
+  font-size: var(--text-md);
   cursor: pointer;
 }
 
@@ -151,17 +165,17 @@ textarea {
 }
 
 .title {
-  margin: 0 0 12px;
-  font-size: 30px;
+  margin: 0 0 6px;
+  font-size: 22px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .subtitle {
-  margin: 0 0 28px;
+  margin: 0 0 20px;
   color: var(--muted);
-  font-size: 15px;
-  line-height: 1.35;
+  font-size: var(--text-sm);
+  line-height: 1.4;
 }
 
 /* ---------- brand (login) ---------- */
@@ -169,15 +183,15 @@ textarea {
 .brand {
   display: flex;
   justify-content: center;
-  margin-bottom: 44px;
+  margin-bottom: 24px;
 }
 
 /* Fixed box so switching variants (different aspect ratios) never shifts the
    layout; each wordmark is fitted inside it. */
 .brand-logo {
   margin: 0;
-  width: min(320px, 100%);
-  height: 72px;
+  width: min(220px, 100%);
+  height: 50px;
 }
 
 .brand-logo button {
@@ -199,9 +213,9 @@ textarea {
 }
 
 .section-label {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   text-align: center;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -210,7 +224,7 @@ textarea {
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   width: 100%;
   max-width: var(--column);
   margin: 0 auto;
@@ -220,7 +234,7 @@ textarea {
    under the picked option. `--count` and `--thumb` come from the markup, so
    the geometry follows ROLE_ORDER instead of being written per role. */
 .role-row {
-  --pad: 6px;
+  --pad: 4px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--count), 1fr);
@@ -255,9 +269,9 @@ textarea {
 /* Hint under the role buttons until one is picked, styled like `.note`. */
 .role-hint {
   min-height: 1.4em;
-  margin: 12px 0 40px;
+  margin: 8px 0 22px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
@@ -266,13 +280,13 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 52px;
+  gap: 7px;
+  min-height: 40px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
-  font-size: 18px;
+  font-size: var(--text-md);
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -301,14 +315,14 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 80px;
-  padding: 0 24px;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
   border: 0;
   border-radius: var(--radius);
   background: var(--accent);
   color: var(--on-accent);
-  font-size: 24px;
+  font-size: 16px;
   cursor: pointer;
   transition:
     filter 0.15s,
@@ -326,35 +340,25 @@ textarea {
 }
 
 .btn-compact {
-  min-height: 56px;
-  font-size: 18px;
+  min-height: 42px;
+  font-size: var(--text-md);
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--field);
-  font-size: 15px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 .chip:hover {
   border-color: var(--border-strong);
-}
-
-@media (max-width: 520px) {
-  .btn {
-    min-height: 60px;
-    font-size: 20px;
-  }
-
-  .role-hint {
-    margin-bottom: 28px;
-  }
 }
 
 /* ---------- fields ---------- */
@@ -374,14 +378,14 @@ textarea {
 .field textarea {
   display: block;
   width: 100%;
-  min-height: 190px;
-  padding: 24px 24px 8px;
+  min-height: 140px;
+  padding: 14px 16px 4px;
   border: 0;
   outline: none;
   resize: vertical;
   background: transparent;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 .field textarea::placeholder {
@@ -393,14 +397,14 @@ textarea {
 .field-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 20px 18px;
+  gap: 6px;
+  padding: 8px 12px 12px;
 }
 
 .input {
   width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
+  min-height: 44px;
+  padding: 0 14px;
   border: 2px solid var(--border-strong);
   border-radius: var(--radius-sm);
   outline: none;
@@ -415,19 +419,19 @@ textarea {
 .field-hint {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 
 .spacer {
-  height: 56px;
+  height: 28px;
 }
 
 .field-gap {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .stack-gap {
-  margin-top: 20px;
+  margin-top: 14px;
 }
 
 .code-panel[data-expired='true'] {
@@ -436,31 +440,27 @@ textarea {
 
 @media (max-width: 520px) {
   .field textarea {
-    min-height: 150px;
-  }
-
-  .title {
-    font-size: 26px;
+    min-height: 120px;
   }
 
   .spacer {
-    height: 32px;
+    height: 20px;
   }
 }
 
 /* ---------- feedback ---------- */
 
 .error {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   color: var(--danger);
-  font-size: 15px;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 .note {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
@@ -468,10 +468,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 20px;
+  gap: 6px;
+  margin-top: 14px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .status[data-tone='success'] {
@@ -495,41 +495,41 @@ textarea {
 /* ---------- code (display + input) ---------- */
 
 .code-caption {
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   color: var(--muted);
   text-align: center;
-  font-size: 16px;
+  font-size: var(--text-sm);
 }
 
 .code-groups {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .code-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 82px;
+  gap: 8px;
+  width: 58px;
 }
 
 .code-group::after {
   content: '';
-  height: 7px;
+  height: 5px;
   border-radius: 4px;
   background: var(--bar);
 }
 
 .code-box {
   width: 100%;
-  height: 82px;
+  height: 58px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--field);
   display: grid;
   place-items: center;
-  font-size: 46px;
+  font-size: 30px;
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -550,16 +550,16 @@ input.code-box:focus {
 
 @media (max-width: 520px) {
   .code-groups {
-    gap: 10px;
+    gap: 8px;
   }
 
   .code-group {
-    width: min(72px, 20vw);
+    width: min(58px, 17vw);
   }
 
   .code-box {
-    height: min(72px, 20vw);
-    font-size: min(38px, 10vw);
+    height: min(58px, 17vw);
+    font-size: min(30px, 8vw);
   }
 }
 
@@ -567,11 +567,11 @@ input.code-box:focus {
 
 .qr {
   display: block;
-  width: 264px;
-  max-width: 70vw;
+  width: 200px;
+  max-width: 60vw;
   height: auto;
   aspect-ratio: 1;
-  margin: 0 auto 24px;
+  margin: 0 auto 16px;
 }
 
 img.qr {
@@ -582,30 +582,31 @@ img.qr {
 .qr-message {
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 16px;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
   color: var(--muted);
-  font-size: 15px;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 /* ---------- camera ---------- */
 
-/* Square scanner from the Figma (254 px, 23 px corners); the brackets sit
-   centred on its edge, so they overhang it by half their stroke. */
+/* Square scanner from the Figma (254 px, 23 px corners), scaled down; the
+   brackets sit centred on its edge, so they overhang it by half their stroke. */
 .camera {
   position: relative;
-  width: min(254px, 100% - 12px);
+  width: min(200px, 100% - 12px);
   aspect-ratio: 1;
-  margin: 8px auto 40px;
+  margin: 4px auto 28px;
 }
 
 .camera-view {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: 23px;
+  /* The Figma's 23 px on a 254 px box, kept proportional at any size. */
+  border-radius: 9.06%;
   background: var(--scanner-bg);
   outline: 4px solid var(--scanner-bg);
   outline-offset: -2px;
@@ -636,31 +637,31 @@ img.qr {
 
 .camera-message {
   position: absolute;
-  inset: 50% 28px auto;
+  inset: 50% 20px auto;
   transform: translateY(-50%);
   margin: 0;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   background: rgb(255 255 255 / 90%);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
 /* ---------- redeemed content ---------- */
 
 .content-box {
-  min-height: 248px;
-  max-height: 50dvh;
+  min-height: 160px;
+  max-height: 45dvh;
   overflow: auto;
-  padding: 24px;
+  padding: 16px;
   border: 2px solid var(--border-strong);
   border-radius: var(--radius);
   /* Show the merchant's text exactly as typed: line breaks, runs of spaces,
      long unbroken strings such as addresses wrapping instead of overflowing. */
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -670,9 +671,9 @@ img.qr {
 }
 
 .peer {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
 

@@ -10,8 +10,9 @@ import { ClipboardPaste, FileKey } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
-import type { Role } from '@/components/roles';
 import { Spinner } from '@/components/Spinner';
+import { ICON_SIZE } from '@/components/icon';
+import type { Role } from '@/components/roles';
 import { CLIPBOARD_BLOCKED_TEXT } from '@/lib/clipboard';
 import { KEY_ERROR_TEXT, keyErrorCode } from '@/lib/errors';
 import type { Signer } from '@/services/keys/signer';
@@ -150,11 +151,11 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
           />
           <div className="field-actions">
             <button type="button" className="chip" disabled={busy} onClick={() => fileRef.current?.click()}>
-              <FileKey size={18} />
+              <FileKey size={ICON_SIZE} />
               Choose file
             </button>
             <button type="button" className="chip" disabled={busy} onClick={() => void pasteKey()}>
-              <ClipboardPaste size={18} />
+              <ClipboardPaste size={ICON_SIZE} />
               Paste
             </button>
           </div>
@@ -184,7 +185,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
         <div className="spacer" />
         <div className="stack">
           <button type="submit" className="btn" disabled={busy || !hasPem || !hasPass}>
-            {busy && <Spinner size={26} />}
+            {busy && <Spinner />}
             {busy ? 'Unlocking…' : 'Unlock'}
           </button>
         </div>

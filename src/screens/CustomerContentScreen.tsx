@@ -7,6 +7,7 @@ import { Check, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
+import { ICON_SIZE } from '@/components/icon';
 import { shortNpub } from '@/lib/npub';
 import { displayableContent, isBlankContent } from '@/services/regby/protocol';
 
@@ -55,7 +56,7 @@ export function CustomerContentScreen({ content, from, onBack }: CustomerContent
       <div className="spacer" />
       <div className="stack">
         <button type="button" className="btn" disabled={empty} onClick={() => void copyText()}>
-          {copy === 'copied' ? <Check size={26} /> : <Copy size={26} />}
+          {copy === 'copied' ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
           {copy === 'copied' ? 'Copied' : 'Copy Text'}
         </button>
       </div>

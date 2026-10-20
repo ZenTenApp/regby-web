@@ -10,6 +10,7 @@ import { CodeDisplay } from '@/components/Code';
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { QrCode } from '@/components/QrCode';
 import { Spinner } from '@/components/Spinner';
+import { ICON_SIZE } from '@/components/icon';
 import { shortNpub } from '@/lib/npub';
 import { useAction } from '@/lib/use-action';
 import { useNow } from '@/lib/use-now';
@@ -60,19 +61,19 @@ export function MerchantCodeScreen({ minted, content, onRegenerate, onBack }: Me
 
       {phase === 'redeemed' && customer !== null && (
         <p className="status" data-tone="success">
-          <CircleCheck size={20} />
+          <CircleCheck size={ICON_SIZE} />
           Redeemed by {shortNpub(customer)}
         </p>
       )}
       {phase === 'expired' && (
         <>
           <p className="status" data-tone="danger">
-            <Clock size={20} />
+            <Clock size={ICON_SIZE} />
             Code expired
           </p>
           <div className="stack stack-gap">
             <button type="button" className="btn btn-compact" disabled={busy} onClick={() => void run()}>
-              {busy ? <Spinner size={22} /> : <RefreshCw size={22} />}
+              {busy ? <Spinner /> : <RefreshCw size={ICON_SIZE} />}
               Generate new code
             </button>
           </div>
@@ -81,7 +82,7 @@ export function MerchantCodeScreen({ minted, content, onRegenerate, onBack }: Me
       )}
       {phase === 'live' && (
         <p className="status">
-          <Clock size={20} />
+          <Clock size={ICON_SIZE} />
           Expires in {formatRemaining(remaining)}
         </p>
       )}

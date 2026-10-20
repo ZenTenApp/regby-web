@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { ICON_SIZE } from './icon';
 import { ROLES, type Role } from './roles';
 
 export function Page({ role, children }: { role: Role | null; children: ReactNode }) {
@@ -21,7 +22,7 @@ export function ScreenHeader({ role, onBack }: { role: Role; onBack: () => void 
     <header className="screen-header">
       <div className="role-badge">
         <span className="role-icon">
-          <Icon size={26} strokeWidth={2} />
+          <Icon strokeWidth={2} />
         </span>
         {label}
       </div>
@@ -33,7 +34,7 @@ export function ScreenHeader({ role, onBack }: { role: Role; onBack: () => void 
 function BackButton({ onBack }: { onBack: () => void }) {
   return (
     <button type="button" className="back" onClick={onBack}>
-      <ChevronLeft size={20} />
+      <ChevronLeft size={ICON_SIZE} />
       Back
     </button>
   );

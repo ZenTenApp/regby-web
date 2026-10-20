@@ -1,5 +1,7 @@
 import { LoaderCircle } from 'lucide-react';
 
-export function Spinner({ size }: { size: number }) {
-  return <LoaderCircle className="spinner" size={size} />;
+import { ICON_SIZE } from './icon';
+
+export function Spinner() {
+  return <LoaderCircle className="spinner" size={ICON_SIZE} />;
 }
