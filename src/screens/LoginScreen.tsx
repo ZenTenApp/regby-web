@@ -24,10 +24,7 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
   return (
     <Page role={role}>
       <div className="brand">
-        <div className="brand-row">
-          <Logo size={72} />
-          <h1 className="brand-name">ReGBY</h1>
-        </div>
+        <Logo />
         <p className="brand-tagline">Simple Pairing Communications Protocol</p>
       </div>
 

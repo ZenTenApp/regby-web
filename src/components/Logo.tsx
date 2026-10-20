@@ -1,11 +1,24 @@
-/** The four code-pair colours as a mark, so the brand reads as the code it issues. */
-export function Logo({ size }: { size: number }) {
+import { useState } from 'react';
+
+import logo1 from '@/assets/regby-logo-1.svg';
+import logo2 from '@/assets/regby-logo-2.svg';
+
+/** The wordmark variants, in tap order. Imported rather than in `public/` so
+ *  the build hashes them and the year-long svg cache never serves a stale one. */
+const VARIANTS: readonly string[] = [logo1, logo2];
+
+/** The ReGBY wordmark as the page heading; a tap cycles through the variants. */
+export function Logo() {
+  const [variant, setVariant] = useState(0);
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="2" y="4" width="13" height="11" rx="3" fill="var(--code-1)" />
-      <rect x="17" y="4" width="13" height="11" rx="3" fill="var(--code-2)" />
-      <rect x="2" y="17" width="13" height="11" rx="3" fill="var(--code-3)" />
-      <rect x="17" y="17" width="13" height="11" rx="3" fill="var(--code-4)" />
-    </svg>
+    <h1 className="brand-logo">
+      <button
+        type="button"
+        aria-label="ReGBY, switch logo style"
+        onClick={() => setVariant((current) => (current + 1) % VARIANTS.length)}
+      >
+        <img src={VARIANTS[variant]} alt="" />
+      </button>
+    </h1>
   );
 }
