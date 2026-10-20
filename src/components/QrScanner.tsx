@@ -18,8 +18,9 @@ const BRACKETS: readonly string[] = [
 ];
 
 /**
- * Live camera that reports each decoded QR once. Results are ignored while
- * `paused`, so a QR held in view does not resubmit during a redeem.
+ * Live camera that reports each decoded QR. Results are ignored while
+ * `paused`, so a scan cannot race a typed redeem. The first result leaves
+ * the screen, which unmounts the scanner, so no dedup is needed.
  */
 export function QrScanner({ onResult, paused }: { onResult: (text: string) => void; paused: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -27,7 +28,6 @@ export function QrScanner({ onResult, paused }: { onResult: (text: string) => vo
   // Refs, so the scanner is built once and still sees the latest props.
   const onResultRef = useRef(onResult);
   const pausedRef = useRef(paused);
-  const lastRef = useRef<string | null>(null);
   onResultRef.current = onResult;
   pausedRef.current = paused;
 
@@ -37,9 +37,7 @@ export function QrScanner({ onResult, paused }: { onResult: (text: string) => vo
     const scanner = new Scanner(
       video,
       (result) => {
-        if (pausedRef.current || result.data === lastRef.current) return;
-        lastRef.current = result.data;
-        onResultRef.current(result.data);
+        if (!pausedRef.current) onResultRef.current(result.data);
       },
       { preferredCamera: 'environment', maxScansPerSecond: 5, returnDetailedScanResult: true },
     );
@@ -52,11 +50,6 @@ export function QrScanner({ onResult, paused }: { onResult: (text: string) => vo
       scanner.destroy();
     };
   }, []);
-
-  // A failed redeem may be retried by scanning the same QR again.
-  useEffect(() => {
-    if (!paused) lastRef.current = null;
-  }, [paused]);
 
   return (
     <div className="camera">

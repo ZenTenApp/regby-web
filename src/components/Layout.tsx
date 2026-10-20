@@ -9,7 +9,7 @@ export function Page({ role, children }: { role: Role | null; children: ReactNod
       <section className="card" data-role={role ?? undefined}>
         {children}
       </section>
-      <footer className="footer">©Copyright ZenTen 2025-2026</footer>
+      <footer className="footer">© 2026 ReGBY by ZenTen · Open Source (MIT)</footer>
     </main>
   );
 }

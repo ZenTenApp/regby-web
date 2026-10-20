@@ -41,7 +41,7 @@ project root and this spec:
 | Replies | Subscribe on `#e` before publishing; author pinned to the broker; intent decides, never content; `""` never decrypted | Protocol rules |
 | Failure text | App's own text per failure intent | Broker sends no text by design |
 | Mint pre-checks | Empty, over 4096 chars, broker's binary class, encrypted size over 4 KB | Broker or relay would silently drop these |
-| QR payload | The bare 8 digits | Same form the customer types |
+| QR payload | The content itself; the code is typed only | Changed after v1.0.0 at the user's request. Text over QR capacity (~2.9 KB) shows a fallback pointing to the code |
 | Display of redeemed text | Plain text, `white-space: pre-wrap`, hidden and bidi characters stripped for display only; Copy keeps the original | Broker is untrusted |
 | Merchant code screen | Countdown from the request `created_at`, "Redeemed by npub…" on `regby_content_delivered`, "Generate new code" after expiry | Broker anchors expiry to `created_at` |
 | Broker key | `VITE_REGBY_MIDDLEMAN_PUBKEY` in `.env`, production key by default | Validated as 64 hex at load |

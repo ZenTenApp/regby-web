@@ -1,26 +1,29 @@
 /**
  * Customer step 2: the merchant's text, shown exactly as written (line breaks
  * and spacing kept) and as plain text only, since it came through an
- * untrusted broker. Copy hands over the original verbatim.
+ * untrusted broker or off a scanned QR. Copy hands over the original verbatim.
  */
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { shortNpub } from '@/lib/npub';
-import type { RedeemedContent } from '@/services/regby/client';
 import { displayableContent } from '@/services/regby/protocol';
 
 const COPIED_FEEDBACK_MS = 2000;
+const REDEEMED_SUBTITLE = 'Successfully redeemed! Contents displayed below.';
+const SCANNED_SUBTITLE = "Scanned from the merchant's QR. Contents displayed below.";
 
 interface CustomerContentScreenProps {
-  redeemed: RedeemedContent;
+  content: string;
+  /** Merchant pubkey for a redeemed code; null for a scanned QR. */
+  from: string | null;
   onBack: () => void;
 }
 
-export function CustomerContentScreen({ redeemed, onBack }: CustomerContentScreenProps) {
+export function CustomerContentScreen({ content, from, onBack }: CustomerContentScreenProps) {
   const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
-  const { text, hadHidden } = displayableContent(redeemed.content);
+  const { text, hadHidden } = displayableContent(content);
   const empty = text.trim() === '';
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export function CustomerContentScreen({ redeemed, onBack }: CustomerContentScree
 
   const copyText = async () => {
     try {
-      await navigator.clipboard.writeText(redeemed.content);
+      await navigator.clipboard.writeText(content);
       setCopy('copied');
     } catch {
       setCopy('failed');
@@ -41,13 +44,13 @@ export function CustomerContentScreen({ redeemed, onBack }: CustomerContentScree
   return (
     <Page role="customer">
       <ScreenHeader role="customer" onBack={onBack} />
-      <ScreenTitle title="Payment Content" subtitle="Successfully redeemed! Contents displayed below." />
+      <ScreenTitle title="Payment Content" subtitle={from === null ? SCANNED_SUBTITLE : REDEEMED_SUBTITLE} />
 
       <div className="content-box" data-empty={empty}>
         {empty ? 'The merchant shared no text.' : text}
       </div>
       {hadHidden && <p className="field-hint">Hidden characters were removed from the display. Copy keeps the original.</p>}
-      <p className="peer">From {shortNpub(redeemed.from)}</p>
+      {from !== null && <p className="peer">From {shortNpub(from)}</p>}
 
       <div className="spacer" />
       <div className="stack">

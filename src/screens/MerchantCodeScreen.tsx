@@ -1,6 +1,7 @@
 /**
- * Merchant step 2: the minted code as QR and digits, counting down to its
- * expiry, and switching to "redeemed" when the broker reports a customer.
+ * Merchant step 2: the shared text as a QR and the minted code as digits,
+ * counting down to the code's expiry, and switching to "redeemed" when the
+ * broker reports a customer.
  */
 import { CircleCheck, Clock, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -22,11 +23,13 @@ function formatRemaining(ms: number): string {
 
 interface MerchantCodeScreenProps {
   minted: MintedCode;
+  /** The shared text itself, carried by the QR; the code is the typed path. */
+  content: string;
   onRegenerate: () => Promise<void>;
   onBack: () => void;
 }
 
-export function MerchantCodeScreen({ minted, onRegenerate, onBack }: MerchantCodeScreenProps) {
+export function MerchantCodeScreen({ minted, content, onRegenerate, onBack }: MerchantCodeScreenProps) {
   const now = useNow();
   const [customer, setCustomer] = useState<string | null>(null);
   const { run, busy, error } = useAction(onRegenerate, regbyErrorText);
@@ -48,8 +51,9 @@ export function MerchantCodeScreen({ minted, onRegenerate, onBack }: MerchantCod
       <ScreenHeader role="merchant" onBack={onBack} />
       <ScreenTitle title="Payment Requested" subtitle="You've successfully created your Payment Request & Code." />
 
+      <QrCode value={content} label="QR code of the shared text" />
+      {/* Only the code expires; the QR carries the text itself and stays valid. */}
       <div className="code-panel" data-expired={phase === 'expired'}>
-        <QrCode value={minted.code} />
         <p className="code-caption">or share Regby Code</p>
         <CodeDisplay code={minted.code} />
       </div>

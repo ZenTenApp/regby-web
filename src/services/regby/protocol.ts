@@ -81,7 +81,7 @@ export function isRegbyCode(value: string): boolean {
 }
 
 /**
- * The bare digits of a typed, pasted or scanned code, or null. Whitespace is
+ * The bare digits of a typed or pasted code, or null. Whitespace is
  * the only separator tolerated, since the merchant screen shows spaced pairs;
  * a dash or dot would let a pasted date read as a code.
  */

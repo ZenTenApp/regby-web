@@ -1,6 +1,7 @@
 /**
- * Customer step 1: square camera on top, the code boxes below. A scanned
- * QR or a full eight digits redeems at once; there is no submit button.
+ * Customer step 1: square camera on top, the code boxes below. A scanned QR
+ * carries the merchant's text itself and opens it directly; a full eight
+ * typed digits redeems the code through the broker. No submit button.
  */
 import { useState } from 'react';
 
@@ -10,16 +11,15 @@ import { QrScanner } from '@/components/QrScanner';
 import { Spinner } from '@/components/Spinner';
 import { REGBY_CODE_LENGTH } from '@/config/regby';
 import { useAction } from '@/lib/use-action';
-import { normalizeRegbyCode, regbyErrorText } from '@/services/regby/protocol';
-
-const NOT_A_CODE = 'This QR is not a ReGBY Code.';
+import { regbyErrorText } from '@/services/regby/protocol';
 
 interface CustomerRedeemScreenProps {
   onRedeem: (code: string) => Promise<void>;
+  onScanned: (content: string) => void;
   onBack: () => void;
 }
 
-export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenProps) {
+export function CustomerRedeemScreen({ onRedeem, onScanned, onBack }: CustomerRedeemScreenProps) {
   const [digits, setDigits] = useState('');
   const redeem = async (code: string) => {
     // Drop the keyboard so the result is not hidden behind it.
@@ -39,22 +39,12 @@ export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenP
     if (next.length === REGBY_CODE_LENGTH) void run(next);
   };
 
-  const onScan = (text: string) => {
-    const code = normalizeRegbyCode(text);
-    if (code === null) {
-      setError(NOT_A_CODE);
-      return;
-    }
-    setDigits(code);
-    void run(code);
-  };
-
   return (
     <Page role="customer">
       <ScreenHeader role="customer" onBack={onBack} />
       <ScreenTitle title="Scan QR or Input Code" subtitle="Scan QR Code or enter ReGBY Code to continue." />
 
-      <QrScanner onResult={onScan} paused={busy} />
+      <QrScanner onResult={onScanned} paused={busy} />
 
       <p className="code-caption">or enter Regby Code</p>
       <CodeInput value={digits} onChange={onChange} invalid={error !== null} disabled={busy} />

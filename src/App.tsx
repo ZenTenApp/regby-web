@@ -10,7 +10,7 @@ import { useCallback, useState } from 'react';
 
 import type { Role } from '@/components/roles';
 import type { Signer } from '@/services/keys/signer';
-import { RegbyClient, type MintedCode, type RedeemedContent } from '@/services/regby/client';
+import { RegbyClient, type MintedCode } from '@/services/regby/client';
 import { CustomerContentScreen } from '@/screens/CustomerContentScreen';
 import { CustomerRedeemScreen } from '@/screens/CustomerRedeemScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
@@ -24,7 +24,9 @@ type Screen =
   | { kind: 'merchant-compose' }
   | { kind: 'merchant-code'; minted: MintedCode; content: string }
   | { kind: 'customer-redeem' }
-  | { kind: 'customer-content'; redeemed: RedeemedContent };
+  // `from` is null for a scanned QR: the text came off the merchant's screen,
+  // not through the broker, so there is no signed sender.
+  | { kind: 'customer-content'; content: string; from: string | null };
 
 interface Session {
   signer: Signer;
@@ -71,8 +73,8 @@ export function App() {
   const redeem = useCallback(
     async (code: string) => {
       if (!session) return;
-      const redeemed = await session.client.redeem(code);
-      setScreen({ kind: 'customer-content', redeemed });
+      const { content, from } = await session.client.redeem(code);
+      setScreen({ kind: 'customer-content', content, from });
     },
     [session],
   );
@@ -97,6 +99,7 @@ export function App() {
       return (
         <MerchantCodeScreen
           minted={screen.minted}
+          content={screen.content}
           onRegenerate={() => {
             // The old code is expired; stop listening for it before re-minting.
             screen.minted.stop();
@@ -109,8 +112,20 @@ export function App() {
         />
       );
     case 'customer-redeem':
-      return <CustomerRedeemScreen onRedeem={redeem} onBack={signOut} />;
+      return (
+        <CustomerRedeemScreen
+          onRedeem={redeem}
+          onScanned={(content) => setScreen({ kind: 'customer-content', content, from: null })}
+          onBack={signOut}
+        />
+      );
     case 'customer-content':
-      return <CustomerContentScreen redeemed={screen.redeemed} onBack={() => setScreen({ kind: 'customer-redeem' })} />;
+      return (
+        <CustomerContentScreen
+          content={screen.content}
+          from={screen.from}
+          onBack={() => setScreen({ kind: 'customer-redeem' })}
+        />
+      );
   }
 }
