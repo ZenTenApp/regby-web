@@ -3,6 +3,8 @@
  * buttons stay disabled until a role is picked, since the role decides where
  * a successful login lands.
  */
+import type { CSSProperties } from 'react';
+
 import { Page } from '@/components/Layout';
 import { Logo } from '@/components/Logo';
 import { ROLES, ROLE_ORDER, type Role } from '@/components/roles';
@@ -25,20 +27,25 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
     <Page role={role}>
       <div className="brand">
         <Logo />
-        <p className="brand-tagline">Simple Pairing Communications Protocol</p>
       </div>
 
       <p className="section-label">Please Select</p>
-      <div className="role-row">
+      <div
+        className="role-row"
+        role="radiogroup"
+        aria-label="Role"
+        data-picked={role !== null || undefined}
+        style={{ '--count': ROLE_ORDER.length, '--thumb': role === null ? 0 : ROLE_ORDER.indexOf(role) } as CSSProperties}
+      >
         {ROLE_ORDER.map((option) => {
           const { label, Icon } = ROLES[option];
           return (
             <button
               key={option}
               type="button"
+              role="radio"
               className="role-button"
-              data-role={option}
-              aria-pressed={role === option}
+              aria-checked={role === option}
               onClick={() => onRole(option)}
             >
               <Icon size={24} />
@@ -47,6 +54,8 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
           );
         })}
       </div>
+      {/* Reserved line, so picking a role does not shift the buttons up. */}
+      <p className="role-hint" aria-live="polite">{role === null ? 'Please select from Merchant or Customer.' : ''}</p>
 
       <div className="stack">
         <button type="button" className="btn" disabled={locked} onClick={() => onSigner(generatedSigner())}>
@@ -60,7 +69,6 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
         </button>
       </div>
       {error && <p className="error">{error}</p>}
-      {role === null && <p className="note">Select Merchant or Customer to continue.</p>}
     </Page>
   );
 }

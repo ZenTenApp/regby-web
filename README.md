@@ -2,7 +2,7 @@
 
 Mobile-friendly web client for [ReGBY](../regby-middleware/docs/protocol.md).
 
-- **Merchant**: enter any text, get it back as a QR plus a one-minute 8-digit
+- **Merchant**: enter any text (empty allowed: shows a blank scan frame), get it back as a QR plus a one-minute 8-digit
   code shown as four coloured pairs. The screen flips to "Redeemed by npub…"
   when a customer redeems the code.
 - **Customer**: scan the QR (the text itself, no broker involved) or type the

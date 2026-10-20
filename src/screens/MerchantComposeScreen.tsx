@@ -6,7 +6,7 @@ import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { Spinner } from '@/components/Spinner';
 import { CLIPBOARD_BLOCKED_TEXT } from '@/lib/clipboard';
 import { useAction } from '@/lib/use-action';
-import { REGBY_ERROR_TEXT, regbyErrorText } from '@/services/regby/protocol';
+import { regbyErrorText } from '@/services/regby/protocol';
 
 interface MerchantComposeScreenProps {
   draft: string;
@@ -18,7 +18,6 @@ interface MerchantComposeScreenProps {
 export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: MerchantComposeScreenProps) {
   const { run, busy, error, setError } = useAction(onGenerate, regbyErrorText);
   const [pasteError, setPasteError] = useState(false);
-  const blank = draft.trim() === '';
 
   const paste = async () => {
     setPasteError(false);
@@ -71,7 +70,7 @@ export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: Me
         <button
           type="button"
           className="btn"
-          disabled={busy || blank}
+          disabled={busy}
           onClick={() => void run(draft)}
         >
           {busy && <Spinner size={26} />}
@@ -79,7 +78,6 @@ export function MerchantComposeScreen({ draft, onDraft, onGenerate, onBack }: Me
         </button>
       </div>
       {error && <p className="error">{error}</p>}
-      {!error && blank && draft !== '' && <p className="note">{REGBY_ERROR_TEXT.empty}</p>}
     </Page>
   );
 }

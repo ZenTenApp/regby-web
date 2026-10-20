@@ -1,8 +1,16 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs';
+
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
+
+// CI's release step sets package.json to the version being tagged before it
+// builds, so the footer always names the release that is deployed.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string;
+};
 
 export default defineConfig(({ command, mode }) => {
   // `src/config/regby.ts` checks the broker key only when the page loads, so a
@@ -15,6 +23,8 @@ export default defineConfig(({ command, mode }) => {
   }
 
   return {
+    define: { __APP_VERSION__: JSON.stringify(version) },
+
     // Browsers only open the camera on a secure origin. `localhost` counts, a
     // phone on the LAN does not, so `npm run dev:lan` serves a self-signed cert.
     plugins: [react(), tsconfigPaths(), ...(mode === 'lan' ? [basicSsl()] : [])],

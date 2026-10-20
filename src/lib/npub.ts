@@ -1,7 +1,8 @@
 import { nip19 } from 'nostr-tools';
 
-/** `npub1abcd…wxyz`: enough to recognise a peer without a wall of bech32. */
+/** `npub1…wxyz`: the prefix plus the last four characters, enough to tell
+ *  peers apart at a glance. */
 export function shortNpub(hex: string): string {
   const npub = nip19.npubEncode(hex);
-  return `${npub.slice(0, 10)}…${npub.slice(-6)}`;
+  return `${npub.slice(0, 5)}…${npub.slice(-4)}`;
 }

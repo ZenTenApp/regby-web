@@ -37,10 +37,10 @@ project root and this spec:
 | Secrets | PEM and passphrase live in DOM refs, never React state | Ported discipline from chat |
 | Session | In memory only; reload signs out | Simplest and safest |
 | Relays | `dm1.zentext.me`, `dm2.nostr.box`, `dm3.npub.cx`, AUTH before every request | These relays return an empty EOSE to an unauthenticated REQ |
-| Requests | kind 4, NIP-04, tags `p`, `i`, `expiration` (72 h less 60 s), `client=regby-web` | Broker and relay requirements |
-| Replies | Subscribe on `#e` before publishing; author pinned to the broker; intent decides, never content; `""` never decrypted | Protocol rules |
+| Requests | kind 4, NIP-04, tags `p`, `i`, `expiration` (72 h less 60 s), `client=regby-web`; `regby_code` on the redeem request | Broker and relay requirements |
+| Replies | Subscribe on `#e` before publishing; author pinned to the broker; intent decides, never content; `""` never decrypted; `regby_code` tag must match the code when present | Protocol rules |
 | Failure text | App's own text per failure intent | Broker sends no text by design |
-| Mint pre-checks | Empty, over 4096 chars, broker's binary class, encrypted size over 4 KB | Broker or relay would silently drop these |
+| Mint pre-checks | Over 4096 chars, broker's binary class, encrypted size over 4 KB. Empty is valid and sent as a raw `""` | Broker or relay would silently drop these |
 | QR payload | The content itself; the code is typed only | Changed after v1.0.0 at the user's request. Text over QR capacity (~2.9 KB) shows a fallback pointing to the code |
 | Display of redeemed text | Plain text, `white-space: pre-wrap`, hidden and bidi characters stripped for display only; Copy keeps the original | Broker is untrusted |
 | Merchant code screen | Countdown from the request `created_at`, "Redeemed by npub…" on `regby_content_delivered`, "Generate new code" after expiry | Broker anchors expiry to `created_at` |
@@ -48,7 +48,7 @@ project root and this spec:
 
 ## Verification
 
-- `tsc -b` clean, `vite build` clean, `vitest`: 20 tests pass (code
+- `tsc -b` clean, `vite build` clean, `vitest` passes (code
   normalisation, mint pre-checks, display sanitising, SSH-to-npub parity).
 - Screenshots at desktop and 390 px compared with the PNGs. Fixed during
   review: textarea text running under the Paste/Clear buttons, title size on

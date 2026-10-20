@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { shortNpub } from '@/lib/npub';
-import { displayableContent } from '@/services/regby/protocol';
+import { displayableContent, isBlankContent } from '@/services/regby/protocol';
 
 const COPIED_FEEDBACK_MS = 2000;
 const REDEEMED_SUBTITLE = 'Successfully redeemed! Contents displayed below.';
@@ -24,7 +24,7 @@ interface CustomerContentScreenProps {
 export function CustomerContentScreen({ content, from, onBack }: CustomerContentScreenProps) {
   const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
   const { text, hadHidden } = displayableContent(content);
-  const empty = text.trim() === '';
+  const empty = isBlankContent(text);
 
   useEffect(() => {
     if (copy !== 'copied') return;
@@ -50,7 +50,7 @@ export function CustomerContentScreen({ content, from, onBack }: CustomerContent
         {empty ? 'The merchant shared no text.' : text}
       </div>
       {hadHidden && <p className="field-hint">Hidden characters were removed from the display. Copy keeps the original.</p>}
-      {from !== null && <p className="peer">From {shortNpub(from)}</p>}
+      {from !== null && <p className="peer">FROM {shortNpub(from)}</p>}
 
       <div className="spacer" />
       <div className="stack">

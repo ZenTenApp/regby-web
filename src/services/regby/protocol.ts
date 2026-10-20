@@ -33,7 +33,6 @@ export type FailureIntent = (typeof FAILURE_INTENTS)[RequestIntent][number];
 /** Everything that can stop a ReGBY round-trip, broker refusals included. */
 export type RegbyErrorReason =
   | FailureIntent
-  | 'empty'
   | 'too-long'
   | 'binary'
   | 'no-relay'
@@ -49,7 +48,6 @@ export const REGBY_ERROR_TEXT: Record<RegbyErrorReason, string> = {
   regby_code_expired: 'This ReGBY Code has expired. Ask for a new one.',
   regby_code_already_redeemed: 'This ReGBY Code was already used.',
   regby_code_locked: 'This ReGBY Code is no longer valid. Ask for a new one.',
-  empty: 'Enter something to share first.',
   'too-long': 'This text is too long for ReGBY. Shorten it and try again.',
   binary: 'This text contains characters ReGBY cannot carry.',
   'no-relay': 'Could not reach the ReGBY relays. Check your connection.',
@@ -94,15 +92,33 @@ export function normalizeRegbyCode(input: string): string | null {
  *  same class as the broker's `BINARY_RE`. */
 const BINARY_RE = /[\u0000-\u0008\u000E-\u001F\uFFFD]/;
 
-/** Throw the reason the broker would drop this content, before sending it. */
+/** Throw the reason the broker would drop this content, before sending it.
+ *  Empty content is valid: it travels as a raw `""`. */
 export function assertMintable(content: string): void {
-  if (content.trim() === '') throw new RegbyError('empty');
   if (content.length > REGBY_MAX_CONTENT_CHARS) throw new RegbyError('too-long');
   if (BINARY_RE.test(content)) throw new RegbyError('binary');
 }
 
+/** Plaintext tag naming the code on every event about one; the broker sets it
+ *  on its replies, and the app on the customer's redeem request. */
+export const CODE_TAG = 'regby_code';
+
 export function readTag(tags: readonly string[][], name: string): string | undefined {
   return tags.find((tag) => tag[0] === name)?.[1];
+}
+
+/** The broker repeats the code as a plaintext `regby_code` tag on every reply
+ *  about one; a mismatch means the reply is not about this code. An absent
+ *  tag is tolerated for brokers that predate it. */
+export function assertCodeTag(tags: readonly string[][], code: string): void {
+  const tagged = readTag(tags, CODE_TAG);
+  if (tagged !== undefined && tagged !== code) throw new RegbyError('malformed');
+}
+
+/** Whether content has nothing to show. Whitespace-only counts, so the
+ *  merchant's QR and the customer's view agree on what "empty" means. */
+export function isBlankContent(content: string): boolean {
+  return content.trim() === '';
 }
 
 /** A pairing tag's pubkey, or null when absent or not hex. */

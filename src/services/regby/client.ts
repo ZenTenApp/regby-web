@@ -25,10 +25,12 @@ import { errorMessage } from '@/lib/errors';
 import type { Signer } from '@/services/keys/signer';
 
 import {
+  CODE_TAG,
   DELIVERED_INTENT,
   FAILURE_INTENTS,
   REPLY_INTENT,
   RegbyError,
+  assertCodeTag,
   assertMintable,
   isRegbyCode,
   normalizeRegbyCode,
@@ -124,15 +126,18 @@ export class RegbyClient {
   async mint(content: string): Promise<MintedCode> {
     assertMintable(content);
     const delivered = deferred<string>();
-    const request = await this.#send('request_regby_code', content, (event) => {
-      if (readTag(event.tags, 'i') !== DELIVERED_INTENT) return;
-      const customer = readPubkeyTag(event.tags, 'to');
-      if (customer) delivered.resolve(customer);
+    const request = await this.#send('request_regby_code', content, {
+      onNotice: (event) => {
+        if (readTag(event.tags, 'i') !== DELIVERED_INTENT) return;
+        const customer = readPubkeyTag(event.tags, 'to');
+        if (customer) delivered.resolve(customer);
+      },
     });
 
     try {
       const reply = await request.reply;
       if (!isRegbyCode(reply.content)) throw new RegbyError('malformed');
+      assertCodeTag(reply.tags, reply.content);
       const expiresAt = (request.createdAt + REGBY_CODE_TTL_SECONDS) * 1000;
       // Keep the subscription for the delivered notice, then let it go.
       const timer = setTimeout(request.close, expiresAt - Date.now() + REGBY_DELIVERED_GRACE_MS);
@@ -151,9 +156,10 @@ export class RegbyClient {
   async redeem(input: string): Promise<RedeemedContent> {
     const code = normalizeRegbyCode(input);
     if (code === null) throw new RegbyError('regby_code_not_found');
-    const request = await this.#send('request_regby_content', code);
+    const request = await this.#send('request_regby_content', code, { tags: [[CODE_TAG, code]] });
     try {
       const reply = await request.reply;
+      assertCodeTag(reply.tags, code);
       // A success always names the merchant; one without it broke protocol.
       const from = readPubkeyTag(reply.tags, 'from');
       if (from === null) throw new RegbyError('malformed');
@@ -176,7 +182,7 @@ export class RegbyClient {
   async #send(
     intent: RequestIntent,
     plaintext: string,
-    onNotice?: (event: NostrEvent) => void,
+    { tags = [], onNotice }: { tags?: string[][]; onNotice?: (event: NostrEvent) => void } = {},
   ): Promise<SentRequest> {
     const relays = await this.#readyRelays();
     const createdAt = nowSeconds();
@@ -196,6 +202,7 @@ export class RegbyClient {
           ['i', intent],
           ['expiration', String(createdAt + REGBY_EVENT_EXPIRY_SECONDS)],
           ['client', CLIENT_NAME],
+          ...tags,
         ],
       }),
     );

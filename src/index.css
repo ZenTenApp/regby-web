@@ -11,6 +11,7 @@
   --on-accent: #ffffff;
   --disabled-bg: #e3e5ea;
   --disabled-text: var(--faint);
+  --toggle-track: #eceef2;
   --danger: #d93a3a;
   --success: #1f9d55;
 
@@ -167,11 +168,8 @@ textarea {
 
 .brand {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
   margin-bottom: 44px;
-  text-align: center;
 }
 
 /* Fixed box so switching variants (different aspect ratios) never shifts the
@@ -200,15 +198,11 @@ textarea {
   object-fit: contain;
 }
 
-.brand-tagline {
-  margin: 0;
-  font-size: 16px;
-}
-
 .section-label {
   margin: 0 0 14px;
   text-align: center;
   font-size: 16px;
+  font-weight: 700;
 }
 
 /* ---------- buttons ---------- */
@@ -222,40 +216,85 @@ textarea {
   margin: 0 auto;
 }
 
+/* Segmented toggle: a grey track with one role-coloured thumb that slides
+   under the picked option. `--count` and `--thumb` come from the markup, so
+   the geometry follows ROLE_ORDER instead of being written per role. */
 .role-row {
+  --pad: 6px;
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: repeat(var(--count), 1fr);
   width: 100%;
   max-width: var(--column);
-  margin: 0 auto 64px;
+  margin: 0 auto;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  background: var(--toggle-track);
+}
+
+.role-row::before {
+  content: '';
+  position: absolute;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: var(--pad);
+  width: calc((100% - 2 * var(--pad)) / var(--count));
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  transform: translateX(calc(var(--thumb) * 100%));
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+/* No role yet: no thumb, both options read as unselected. */
+.role-row:not([data-picked])::before {
+  opacity: 0;
+}
+
+/* Hint under the role buttons until one is picked, styled like `.note`. */
+.role-hint {
+  min-height: 1.4em;
+  margin: 12px 0 40px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 .role-button {
-  --tone: var(--merchant);
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 60px;
+  min-height: 52px;
+  border: 0;
   border-radius: var(--radius-sm);
-  border: 2px solid var(--tone);
-  background: var(--field);
-  color: var(--tone);
-  font-size: 19px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
+  transition: color 0.2s ease;
 }
 
-.role-button[data-role='customer'] {
-  --tone: var(--customer);
+.role-button:hover:not([aria-checked='true']) {
+  color: var(--text);
 }
 
-.role-button[aria-pressed='true'] {
-  background: var(--tone);
+.role-button[aria-checked='true'] {
   color: var(--on-accent);
+}
+
+.role-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-row::before,
+  .role-button {
+    transition: none;
+  }
 }
 
 .btn {
@@ -313,9 +352,8 @@ textarea {
     font-size: 20px;
   }
 
-  .role-row {
-    gap: 12px;
-    margin-bottom: 40px;
+  .role-hint {
+    margin-bottom: 28px;
   }
 }
 
@@ -534,6 +572,9 @@ input.code-box:focus {
   height: auto;
   aspect-ratio: 1;
   margin: 0 auto 24px;
+}
+
+img.qr {
   image-rendering: pixelated;
 }
 
@@ -576,7 +617,11 @@ input.code-box:focus {
   object-fit: cover;
 }
 
-.camera-frame {
+.qr-empty {
+  position: relative;
+}
+
+.scan-frame {
   position: absolute;
   inset: 0;
   width: 100%;

@@ -67,9 +67,16 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     setError(null);
   };
 
+  /** A whole key arriving at once (file or Paste button) leaves only the
+   *  passphrase to fill, so move there. Typing in the key field does not. */
+  const loadPem = (value: string) => {
+    setPem(value);
+    if (value.trim() !== '') passRef.current?.focus();
+  };
+
   const pasteKey = async () => {
     try {
-      setPem(await navigator.clipboard.readText());
+      loadPem(await navigator.clipboard.readText());
     } catch {
       setError(CLIPBOARD_BLOCKED_TEXT);
     }
@@ -84,7 +91,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
       setError('That file is too large to be an SSH private key.');
       return;
     }
-    file.text().then(setPem, () => setError('Could not read that file.'));
+    file.text().then(loadPem, () => setError('Could not read that file.'));
   };
 
   const submit = async (event: FormEvent) => {
