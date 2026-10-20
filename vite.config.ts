@@ -26,6 +26,12 @@ export default defineConfig(({ command, mode }) => {
     // CommonJS deps of the SSH path; pre-bundled so the worker resolves them.
     optimizeDeps: { include: ['bcrypt-pbkdf', 'tweetnacl'] },
 
-    test: { environment: 'node', include: ['src/**/*.test.ts'] },
+    // Tests import `config/regby.ts`, which needs the broker key at load. CI has
+    // no `.env`, so take the committed production value instead.
+    test: {
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+      env: loadEnv('production', process.cwd(), 'VITE_'),
+    },
   };
 });
