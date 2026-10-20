@@ -1,0 +1,217 @@
+name: Release ReGBY Web
+
+# Semantic-release pipeline, same shape as chat's (kinds.nostr.box). Every push
+# to main is analysed for Conventional Commit types: a `feat`/`fix`/breaking
+# commit cuts a new version, a docs/chore/refactor-only push does nothing. A
+# dry run decides (and computes the version); only when a release is due do the
+# build + deploy steps run. semantic-release then bumps package.json, writes
+# CHANGELOG.md, commits both back to main (with `[skip ci]`), tags `vX.Y.Z`, and
+# publishes a GitHub Release with the bundle tarball attached. The live site at
+# https://regby.nostr.box/ is updated over SFTP before the release is published,
+# so a release tag never points at something that failed to deploy.
+#
+# Single job on purpose: semantic-release core verifies branch push access even
+# in `--dry-run`, so the token needs `contents: write` just to compute the next
+# version. One job runs the write-capable semantic-release exactly once, and the
+# build + deploy are skipped in-line when no release is due.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run. Without cancel-in-progress, pushing
+# again mid-build leaves the older run's checkout behind remote main, and
+# semantic-release aborts with "branch is behind" and publishes nothing. It also
+# stops an older bundle from landing on the server after a newer one.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # contents: write -> push the release commit + tag (needed even by the dry
+    # run's push-access check). issues/pull-requests: write -> GitHub plugin.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history + tags for commit-analyzer; the token persists so the
+          # git plugin can push the release commit + tag.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # `ci`, not `install`: the lockfile keeps @noble/* and @scure/* on the
+      # versions nostr-tools pins, so one copy of each ships in the bundle.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # Dry run: compute the next version without tagging, committing, or
+      # publishing. `new_release_published` is 'true' only when a releasable
+      # commit exists since the last tag; every step below is gated on it.
+      - name: Compute next version (dry run)
+        id: dry
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          # MUST match the Publish step's extra_plugins: both load the same
+          # release.config.cjs, and GitHub Actions has no YAML anchors.
+          extra_plugins: |
+            @semantic-release/changelog@6
+            @semantic-release/git@10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # From here down every step repeats the `if`. Grouping them would need a
+      # dependent job, which brings back the stale-checkout race above.
+
+      - name: Set release version
+        if: steps.dry.outputs.new_release_published == 'true'
+        run: npm version "${{ steps.dry.outputs.new_release_version }}" --no-git-tag-version --allow-same-version
+
+      # The broker pubkey comes from the committed .env.production; vite.config
+      # fails the build if it is missing or malformed.
+      - name: Build
+        if: steps.dry.outputs.new_release_published == 'true'
+        run: npm run build
+
+      # Host key comes from a secret, not ssh-keyscan: keyscan trusts whatever
+      # answers at deploy time, which is exactly the check being skipped.
+      # Generate the secret once with `ssh-keyscan <DEPLOY_HOST>`.
+      - name: Configure SSH
+        if: steps.dry.outputs.new_release_published == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          # A known_hosts entry is keyed by the exact host string, so the
+          # connection would only report a bare "Host key verification failed".
+          # Name the three ways to get there instead.
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "::error::DEPLOY_KNOWN_HOSTS is empty or unset."
+            exit 1
+          fi
+          if grep -q '^|1|' ~/.ssh/known_hosts; then
+            echo "::error::DEPLOY_KNOWN_HOSTS holds hashed entries, which only" \
+                 "match the host they were hashed for. Regenerate with:" \
+                 "ssh-keyscan $DEPLOY_HOST"
+            exit 1
+          fi
+          if ! ssh-keygen -F "$DEPLOY_HOST" -f ~/.ssh/known_hosts > /dev/null; then
+            echo "::error::DEPLOY_KNOWN_HOSTS ($(wc -l < ~/.ssh/known_hosts) entries)" \
+                 "names no host matching DEPLOY_HOST. The two secrets have to" \
+                 "agree on how the host is spelled. Regenerate with:" \
+                 "ssh-keyscan $DEPLOY_HOST"
+            exit 1
+          fi
+
+      # The hosting account has SFTP but no shell, which rules rsync out (it runs
+      # its own binary on the far side). `lftp mirror` is the same directory
+      # sync over SFTP. lftp is not on the runner image, hence the install.
+      - name: Install lftp
+        if: steps.dry.outputs.new_release_published == 'true'
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      # Two passes, in this order, because a static site is briefly inconsistent
+      # while it uploads: pass one adds the new hashed assets without deleting
+      # anything, so the old index.html keeps resolving; pass two writes the new
+      # index.html and only then removes what the build dropped.
+      #
+      # --delete makes DEPLOY_PATH this app's alone. The excludes are cPanel's
+      # own directories in that docroot: .well-known carries the ACME challenges
+      # that renew the TLS certificate, and cgi-bin comes with every docroot.
+      #
+      # `open -u USER,` with the empty password stops lftp prompting for one and
+      # falling back to an anonymous login; the key goes to ssh, not lftp.
+      - name: Deploy to regby.nostr.box
+        if: steps.dry.outputs.new_release_published == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          lftp -c "
+            set sftp:connect-program 'ssh -a -x -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts';
+            open -u $DEPLOY_USER, sftp://$DEPLOY_HOST;
+            mirror --reverse --verbose --parallel=4 \
+                   --exclude '^\.well-known/' --exclude '^cgi-bin/' \
+                   --exclude '(^|/)\.DS_Store$' --exclude '^index\.html$' \
+                   dist/ '$DEPLOY_PATH';
+            mirror --reverse --verbose --delete \
+                   --exclude '^\.well-known/' --exclude '^cgi-bin/' \
+                   --exclude '(^|/)\.DS_Store$' \
+                   dist/ '$DEPLOY_PATH';
+          "
+
+      # The deploy is only done when the server serves it: the shell, and the
+      # exact entry script this build's index.html names (a stale or partial
+      # upload fails the second check).
+      - name: Verify the live site
+        if: steps.dry.outputs.new_release_published == 'true'
+        run: |
+          curl -sSf --retry 3 --retry-delay 5 https://regby.nostr.box/ | grep -q '<div id="root">'
+          entry=$(grep -o 'src="/assets/[^"]*\.js"' dist/index.html | head -1 | cut -d'"' -f2)
+          test -n "$entry"
+          curl -sSf -o /dev/null "https://regby.nostr.box$entry"
+
+      # Matches the `regby-web-v*.tar.gz` glob in release.config.cjs, so the
+      # exact deployed tree is attached to the GitHub Release.
+      - name: Stage bundle tarball
+        if: steps.dry.outputs.new_release_published == 'true'
+        run: tar -czf "regby-web-v${{ steps.dry.outputs.new_release_version }}.tar.gz" -C dist .
+
+      # The real run: bumps package.json, writes CHANGELOG.md, commits to main
+      # with `[skip ci]`, tags vX.Y.Z, and publishes the GitHub Release with the
+      # tarball. Same version the dry run computed.
+      - name: Publish release (semantic-release)
+        if: steps.dry.outputs.new_release_published == 'true'
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog@6
+            @semantic-release/git@10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only notify on an actual publish.
+      - name: Send Matrix notification
+        if: steps.dry.outputs.new_release_published == 'true'
+        uses: s3krit/matrix-message-action@v0.0.3
+        with:
+          room_id: '!iwdKjDhZbfmbPcQDyI:ft.hn'
+          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          server: 'matrix.ft.hn'
+          message: |
+            **ReGBY Web v${{ steps.dry.outputs.new_release_version }} (build #${{ github.run_number }}) - Release**
+
+            Web app: [https://regby.nostr.box/](https://regby.nostr.box/)
+            GitHub Release: [v${{ steps.dry.outputs.new_release_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.dry.outputs.new_release_version }})
+
+            Version: `${{ steps.dry.outputs.new_release_version }}` | Build: `${{ github.run_number }}` | Platform: `web`
+
+            [View Build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Commit: `${{ github.sha }}`

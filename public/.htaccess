@@ -1,0 +1,18 @@
+# Apache config for the static host at regby.nostr.box, copied verbatim into
+# dist/ by Vite and uploaded with the bundle, so the cache rules and the build
+# they describe always ship together.
+#
+# No rewrite rules: the app has a single URL and keeps its screen flow in
+# memory, so there are no deep links to route back to index.html.
+
+<IfModule mod_headers.c>
+  # Hashed asset filenames change whenever their content does, so they can be
+  # cached forever. index.html must not be: it is the one file that names the
+  # current hashes, and a cached copy pins a browser to a dead bundle.
+  <FilesMatch "\.(js|css|woff2?|svg|png|jpg|jpeg|webp|avif)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

@@ -1,0 +1,11 @@
+node_modules
+dist
+.vite
+*.local
+.env
+.DS_Store
+# Never commit a real key.
+*.pem
+id_ed25519*
+# Throwaway test keys, copied from chat; they protect nothing.
+!src/**/__fixtures__/*
