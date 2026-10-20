@@ -1,7 +1,7 @@
 {
   "name": "regby-web",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "ReGBY web client: merchants turn text into an 8-digit code, customers redeem it",
   "scripts": {

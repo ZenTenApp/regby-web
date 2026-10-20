@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.2.0](https://github.com/ZenTenApp/regby-web/compare/v1.1.0...v1.2.0) (2026-10-20)
+
+
+### Features
+
+* compact, mobile-friendly sizing ([1f5c4ac](https://github.com/ZenTenApp/regby-web/commit/1f5c4acc78aa927512831db10ad9cd4951718c2a))
+* regby_code tag, empty content, role toggle and login polish ([54975dd](https://github.com/ZenTenApp/regby-web/commit/54975dd8c6c151ce3780510e661459f99a62c19a))
+
 # [1.1.0](https://github.com/ZenTenApp/regby-web/compare/v1.0.0...v1.1.0) (2026-10-20)
 
 
