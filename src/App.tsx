@@ -39,14 +39,13 @@ const HOME: Record<Role, Screen> = {
 };
 
 export function App() {
-  const [role, setRole] = useState<Role | null>(null);
+  const [role, setRole] = useState<Role>('merchant');
   const [screen, setScreen] = useState<Screen>({ kind: 'login' });
   const [session, setSession] = useState<Session | null>(null);
   const [draft, setDraft] = useState('');
 
   const signIn = useCallback(
     (signer: Signer) => {
-      if (role === null) return;
       setSession({ signer, client: new RegbyClient(signer) });
       setScreen(HOME[role]);
     },
@@ -90,9 +89,7 @@ export function App() {
         />
       );
     case 'ssh':
-      return role === null ? null : (
-        <SshKeyScreen role={role} onBack={() => setScreen({ kind: 'login' })} onSigner={signIn} />
-      );
+      return <SshKeyScreen role={role} onBack={() => setScreen({ kind: 'login' })} onSigner={signIn} />;
     case 'merchant-compose':
       return <MerchantComposeScreen draft={draft} onDraft={setDraft} onGenerate={mint} onBack={signOut} />;
     case 'merchant-code':

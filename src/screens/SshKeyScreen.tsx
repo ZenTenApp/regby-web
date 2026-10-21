@@ -1,15 +1,17 @@
 /**
  * Log in with an encrypted OpenSSH Ed25519 key, pasted or loaded from a file,
  * plus its passphrase. Same derivation as chat and usdt-pay, so the same key
- * is the same npub everywhere.
+ * is the same npub everywhere. An optional subaccount name opens the identity
+ * `meltify -s <name>` derives from the key instead, as in chat.
  *
- * The PEM and passphrase live only in the DOM nodes and are read at submit
- * time; React state holds just whether each field is filled.
+ * The PEM, passphrase and subaccount live only in the DOM nodes and are read
+ * at submit time; React state holds just whether each required field is filled.
  */
 import { ClipboardPaste, FileKey } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
+import { MaskedInput } from '@/components/MaskedInput';
 import { Spinner } from '@/components/Spinner';
 import { ICON_SIZE } from '@/components/icon';
 import type { Role } from '@/components/roles';
@@ -40,9 +42,14 @@ interface SshKeyScreenProps {
   onSigner: (signer: Signer) => void;
 }
 
+function clearFields(...fields: (HTMLInputElement | HTMLTextAreaElement | null)[]): void {
+  for (const field of fields) if (field) field.value = '';
+}
+
 export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   const pemRef = useRef<HTMLTextAreaElement>(null);
   const passRef = useRef<HTMLInputElement>(null);
+  const subaccountRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasPem, setHasPem] = useState(false);
   const [hasPass, setHasPass] = useState(false);
@@ -52,13 +59,11 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
 
   useEffect(() => {
     prepareSshLogin();
-    const pem = pemRef.current;
-    const pass = passRef.current;
+    const fields = [pemRef.current, passRef.current, subaccountRef.current];
     // Clear the secrets on the way out; the strings themselves cannot be wiped.
     return () => {
       cancelSshLogin();
-      if (pem) pem.value = '';
-      if (pass) pass.value = '';
+      clearFields(...fields);
     };
   }, []);
 
@@ -99,6 +104,9 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     event.preventDefault();
     const pem = pemRef.current?.value ?? '';
     const passphrase = passRef.current?.value ?? '';
+    // Not trimmed: meltify hashes the name byte for byte, and a trimmed one
+    // would quietly open a different identity than `meltify -s` prints.
+    const subaccount = subaccountRef.current?.value ?? '';
     setError(null);
 
     let rounds: number;
@@ -115,9 +123,8 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
       () => undefined,
     );
     try {
-      const signer = await loginWithSsh(pem, passphrase);
-      if (pemRef.current) pemRef.current.value = '';
-      if (passRef.current) passRef.current.value = '';
+      const signer = await loginWithSsh(pem, passphrase, subaccount);
+      clearFields(pemRef.current, passRef.current, subaccountRef.current);
       onSigner(signer);
     } catch (err) {
       setError(KEY_ERROR_TEXT[keyErrorCode(err)]);
@@ -180,6 +187,27 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
               setError(null);
             }}
           />
+        </div>
+
+        <div className="field-gap">
+          <label htmlFor="subaccount" className="visually-hidden">
+            Subaccount
+          </label>
+          <MaskedInput
+            id="subaccount"
+            ref={subaccountRef}
+            placeholder="Subaccount (optional)"
+            autoComplete="off"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-describedby="subaccount-hint"
+            disabled={busy}
+          />
+          <p id="subaccount-hint" className="field-hint">
+            Same as <code>meltify -s &lt;name&gt;</code>: a separate identity from this key. Leave empty to sign in as
+            the key itself.
+          </p>
         </div>
 
         <div className="spacer" />

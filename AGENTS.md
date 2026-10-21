@@ -17,5 +17,7 @@ directly, or types the code and gets the text back through the broker.
 - Every published event carries `["client", "regby-web"]` (DM relays reject
   writes without one) and a NIP-40 `expiration` within 72 h.
 - The SSH login must derive the same npub as `chat` and `usdt-pay`:
-  Ed25519 seed -> BIP39 entropy -> NIP-06 `m/44'/1237'/0'/0/0`.
+  Ed25519 seed -> BIP39 entropy -> NIP-06 `m/44'/1237'/0'/0/0`. A non-empty
+  subaccount first replaces the seed with meltify's `-s` derivation,
+  `SHA256(SHA256(name) || seed)`, as chat does.
 - Secrets (PEM, passphrase, secret key) never enter React state.

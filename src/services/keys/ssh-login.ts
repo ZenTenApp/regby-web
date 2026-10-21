@@ -22,9 +22,9 @@ export function estimateSshLoginSeconds(rounds: number): Promise<number> {
   return keyWorker.request('estimate', { rounds }).then((result) => result.seconds);
 }
 
-export async function loginWithSsh(pem: string, passphrase: string): Promise<Signer> {
+export async function loginWithSsh(pem: string, passphrase: string, subaccount: string): Promise<Signer> {
   try {
-    const { secretKey } = await keyWorker.request('ssh-login', { pem, passphrase });
+    const { secretKey } = await keyWorker.request('ssh-login', { pem, passphrase, subaccount });
     return localSigner(secretKey);
   } finally {
     keyWorker.terminate();

@@ -1,7 +1,6 @@
 /**
- * First screen: pick a role (mandatory), then how to get a key. The key
- * buttons stay disabled until a role is picked, since the role decides where
- * a successful login lands.
+ * First screen: pick a role, then how to get a key. Merchant is preselected;
+ * the role decides where a successful login lands.
  */
 import type { CSSProperties } from 'react';
 
@@ -14,7 +13,7 @@ import { useAction } from '@/lib/use-action';
 import { extensionSigner, generatedSigner, type Signer } from '@/services/keys/signer';
 
 interface LoginScreenProps {
-  role: Role | null;
+  role: Role;
   onRole: (role: Role) => void;
   onSigner: (signer: Signer) => void;
   onSsh: () => void;
@@ -22,7 +21,6 @@ interface LoginScreenProps {
 
 export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps) {
   const { run, busy, error } = useAction(async () => onSigner(await extensionSigner()), errorMessage);
-  const locked = role === null || busy;
 
   return (
     <Page role={role}>
@@ -35,8 +33,7 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
         className="role-row"
         role="radiogroup"
         aria-label="Role"
-        data-picked={role !== null || undefined}
-        style={{ '--count': ROLE_ORDER.length, '--thumb': role === null ? 0 : ROLE_ORDER.indexOf(role) } as CSSProperties}
+        style={{ '--count': ROLE_ORDER.length, '--thumb': ROLE_ORDER.indexOf(role) } as CSSProperties}
       >
         {ROLE_ORDER.map((option) => {
           const { label, Icon } = ROLES[option];
@@ -55,17 +52,15 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
           );
         })}
       </div>
-      {/* Reserved line, so picking a role does not shift the buttons up. */}
-      <p className="role-hint" aria-live="polite">{role === null ? 'Please select from Merchant or Customer.' : ''}</p>
 
       <div className="stack">
-        <button type="button" className="btn" disabled={locked} onClick={() => onSigner(generatedSigner())}>
+        <button type="button" className="btn" disabled={busy} onClick={() => onSigner(generatedSigner())}>
           Generate KeyPair
         </button>
-        <button type="button" className="btn" disabled={locked} onClick={() => void run()}>
+        <button type="button" className="btn" disabled={busy} onClick={() => void run()}>
           Login with Signer
         </button>
-        <button type="button" className="btn" disabled={locked} onClick={onSsh}>
+        <button type="button" className="btn" disabled={busy} onClick={onSsh}>
           Login with SSH Key
         </button>
       </div>

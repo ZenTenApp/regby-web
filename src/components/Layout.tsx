@@ -4,10 +4,10 @@ import type { ReactNode } from 'react';
 import { ICON_SIZE } from './icon';
 import { ROLES, type Role } from './roles';
 
-export function Page({ role, children }: { role: Role | null; children: ReactNode }) {
+export function Page({ role, children }: { role: Role; children: ReactNode }) {
   return (
     <main className="page">
-      <section className="card" data-role={role ?? undefined}>
+      <section className="card" data-role={role}>
         {children}
       </section>
       <footer className="footer">© 2026 ReGBY by ZenTen · Open Source (MIT) · v{__APP_VERSION__}</footer>

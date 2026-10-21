@@ -11,8 +11,9 @@ export interface KeyWorkerRequestMap {
   warmup: Record<string, never>;
   /** Benchmark bcrypt and project the wait for `rounds`. */
   estimate: { rounds: number };
-  /** Decrypt an OpenSSH key and derive the Nostr key it roots. */
-  'ssh-login': { pem: string; passphrase: string };
+  /** Decrypt an OpenSSH key and derive the Nostr key it roots. A non-empty
+   *  `subaccount` swaps the key's seed for `meltify -s <subaccount>`'s first. */
+  'ssh-login': { pem: string; passphrase: string; subaccount: string };
 }
 
 export interface KeyWorkerResultMap {

@@ -6,18 +6,22 @@
 import { wipe } from '@/lib/bytes';
 import { errorMessage, keyErrorCode } from '@/lib/errors';
 import { nostrKeyFromSshSeed } from '@/services/keys/nip06';
+import { deriveSubaccountSeed } from '@/services/keys/subaccount';
 import { convertOpenSSHEd25519, estimateDecryptSeconds } from '@/services/ssh';
 
 import type { KeyWorkerRequest, KeyWorkerResponse } from './protocol';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
-function sshSecretKey(pem: string, passphrase: string): Uint8Array {
+/** Empty `subaccount` means the key itself, as in chat. */
+function sshSecretKey(pem: string, passphrase: string, subaccount: string): Uint8Array {
   const seed = convertOpenSSHEd25519(pem, passphrase);
+  let root = seed;
   try {
-    return nostrKeyFromSshSeed(seed);
+    if (subaccount !== '') root = deriveSubaccountSeed(seed, subaccount);
+    return nostrKeyFromSshSeed(root);
   } finally {
-    wipe(seed);
+    wipe(seed, root);
   }
 }
 
@@ -37,7 +41,7 @@ function handle(request: KeyWorkerRequest): KeyWorkerResponse {
         id: request.id,
         ok: true,
         kind: 'ssh-login',
-        result: { secretKey: sshSecretKey(request.pem, request.passphrase) },
+        result: { secretKey: sshSecretKey(request.pem, request.passphrase, request.subaccount) },
       };
   }
 }
