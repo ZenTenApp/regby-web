@@ -3,7 +3,13 @@
  * (see its docs/protocol.md). The reply intent decides the outcome, never the
  * content: a success may carry empty content, a failure always does.
  */
-import { HEX_PUBKEY_RE, REGBY_CODE_LENGTH, REGBY_MAX_CONTENT_CHARS } from '@/config/regby';
+import {
+  HEX_PUBKEY_RE,
+  REGBY_CLOCK_SKEW_SECONDS,
+  REGBY_CODE_LENGTH,
+  REGBY_CODE_TTL_SECONDS,
+  REGBY_MAX_CONTENT_CHARS,
+} from '@/config/regby';
 
 export type RequestIntent = 'request_regby_code' | 'request_regby_content';
 
@@ -113,6 +119,27 @@ export function readTag(tags: readonly string[][], name: string): string | undef
 export function assertCodeTag(tags: readonly string[][], code: string): void {
   const tagged = readTag(tags, CODE_TAG);
   if (tagged !== undefined && tagged !== code) throw new RegbyError('malformed');
+}
+
+/** The broker's `clampStart`, line for line: where a code's minute starts. */
+function clampStart(createdAt: number, brokerNow: number): number {
+  if (createdAt > brokerNow + REGBY_CLOCK_SKEW_SECONDS) return brokerNow;
+  if (createdAt < brokerNow - REGBY_CLOCK_SKEW_SECONDS) return brokerNow - REGBY_CLOCK_SKEW_SECONDS;
+  return createdAt;
+}
+
+/**
+ * Local epoch ms at which the broker stops honouring a code. The broker
+ * judges expiry on its own clock, from the request's `created_at` clamped
+ * into its skew window, so the device clock alone would show a countdown
+ * that ends before or after the code does. The reply's `created_at` floors
+ * the broker clock, putting the real broker time up to a second past it on
+ * arrival; one second off the end covers that, leaving only relay delay on
+ * the reply to run late.
+ */
+export function codeExpiresAt(requestCreatedAt: number, brokerNow: number, receivedAtMs: number): number {
+  const secondsLeft = clampStart(requestCreatedAt, brokerNow) + REGBY_CODE_TTL_SECONDS - brokerNow - 1;
+  return receivedAtMs + secondsLeft * 1000;
 }
 
 /** Whether content has nothing to show. Whitespace-only counts, so the

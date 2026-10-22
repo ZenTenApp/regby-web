@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertCodeTag, assertMintable, displayableContent, isBlankContent, normalizeRegbyCode } from './protocol';
+import {
+  assertCodeTag,
+  assertMintable,
+  codeExpiresAt,
+  displayableContent,
+  isBlankContent,
+  normalizeRegbyCode,
+} from './protocol';
 
 describe('normalizeRegbyCode', () => {
   it.each([
@@ -68,5 +75,22 @@ describe('displayableContent', () => {
 
   it('keeps line breaks and tabs', () => {
     expect(displayableContent('a\n\tb')).toEqual({ text: 'a\n\tb', hadHidden: false });
+  });
+});
+
+describe('codeExpiresAt', () => {
+  // Broker clock 1000 s, reply received at local 5_000_000 ms. Each case is
+  // one second short of the broker's window, covering its whole-second floor.
+  const brokerNow = 1000;
+  const receivedAt = 5_000_000;
+
+  it.each([
+    ['in sync', 1000, 59],
+    ['device ahead within skew', 1020, 79],
+    ['device behind within skew', 980, 39],
+    ['device far ahead: re-anchored to broker now', 1100, 59],
+    ['device far behind: capped at broker now - skew', 900, 29],
+  ])('%s', (_, requestCreatedAt, secondsLeft) => {
+    expect(codeExpiresAt(requestCreatedAt, brokerNow, receivedAt)).toBe(receivedAt + secondsLeft * 1000);
   });
 });

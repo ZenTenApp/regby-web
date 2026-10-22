@@ -15,7 +15,6 @@ import {
   REGBY_KIND,
   REGBY_MAX_WIRE_BYTES,
   REGBY_MIDDLEMAN_PUBKEY,
-  REGBY_CODE_TTL_SECONDS,
   REGBY_RELAYS,
   REGBY_REQUEST_TIMEOUT_MS,
   RELAY_CONNECT_TIMEOUT_MS,
@@ -32,6 +31,7 @@ import {
   RegbyError,
   assertCodeTag,
   assertMintable,
+  codeExpiresAt,
   isRegbyCode,
   normalizeRegbyCode,
   readPubkeyTag,
@@ -43,7 +43,7 @@ import {
 /** A code the broker minted, and when it stops working. */
 export interface MintedCode {
   code: string;
-  /** Epoch ms; the broker counts from the request's `created_at`, as we do. */
+  /** Local epoch ms, mapped from the broker clock that decides expiry. */
   expiresAt: number;
   /** Resolves with the customer's hex pubkey once the code is redeemed while
    *  still listened for; never settles otherwise. */
@@ -61,6 +61,10 @@ export interface RedeemedContent {
 interface Reply {
   content: string;
   tags: string[][];
+  /** The reply's `created_at`: the broker clock, in seconds. */
+  createdAt: number;
+  /** Local epoch ms the reply arrived. */
+  receivedAt: number;
 }
 
 interface SentRequest {
@@ -138,7 +142,7 @@ export class RegbyClient {
       const reply = await request.reply;
       if (!isRegbyCode(reply.content)) throw new RegbyError('malformed');
       assertCodeTag(reply.tags, reply.content);
-      const expiresAt = (request.createdAt + REGBY_CODE_TTL_SECONDS) * 1000;
+      const expiresAt = codeExpiresAt(request.createdAt, reply.createdAt, reply.receivedAt);
       // Keep the subscription for the delivered notice, then let it go.
       const timer = setTimeout(request.close, expiresAt - Date.now() + REGBY_DELIVERED_GRACE_MS);
       const stop = () => {
@@ -220,12 +224,14 @@ export class RegbyClient {
       }
       if (answered) return;
       answered = true;
+      const receivedAt = Date.now();
       if (failed) {
         replied.reject(new RegbyError(replyIntent));
         return;
       }
       this.#open(incoming.content).then(
-        (text) => replied.resolve({ content: text, tags: incoming.tags }),
+        (text) =>
+          replied.resolve({ content: text, tags: incoming.tags, createdAt: incoming.created_at, receivedAt }),
         () => replied.reject(new RegbyError('malformed')),
       );
     };

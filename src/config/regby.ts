@@ -30,8 +30,13 @@ export const CLIENT_NAME = 'regby-web';
 export const REGBY_CODE_LENGTH = 8;
 export const REGBY_CODE_GROUP = 2;
 
-/** A code lives one minute from the merchant's request `created_at`. */
+/** A code lives one minute from its broker-clamped anchor (see `codeExpiresAt`). */
 export const REGBY_CODE_TTL_SECONDS = 60;
+
+/** Broker's `REGBY_CLOCK_SKEW_SECONDS`: how far a request's `created_at` may
+ *  sit from the broker clock before the broker re-anchors the code. Must match
+ *  the deployed broker, which reads it from env. */
+export const REGBY_CLOCK_SKEW_SECONDS = 30;
 
 /** Relays cap NIP-40 expiration at 72 h; one minute under absorbs clock skew. */
 export const REGBY_EVENT_EXPIRY_SECONDS = 72 * 60 * 60 - 60;
