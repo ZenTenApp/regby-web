@@ -72,14 +72,19 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: start;
   gap: 16px;
-  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  padding: max(12vh, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
 }
 
+/* One fixed size for every screen, fitted to the tallest (SSH login), so the
+   card never jumps between screens; anything longer scrolls inside it. */
 .card {
+  --card-height: 650px;
   width: 100%;
   max-width: 420px;
+  height: var(--card-height);
+  flex-shrink: 0;
+  overflow-y: auto;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -103,11 +108,11 @@ textarea {
 
 @media (max-width: 520px) {
   .page {
-    justify-content: flex-start;
     padding-top: max(16px, env(safe-area-inset-top));
   }
 
   .card {
+    --card-height: 610px;
     padding: 22px 18px;
   }
 }
@@ -442,7 +447,8 @@ textarea {
 }
 
 .spacer {
-  height: 28px;
+  /* Takes the card's spare height, so primary actions sit at its foot. */
+  flex: 1 0 28px;
 }
 
 .field-gap {
