@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.3.0](https://github.com/ZenTenApp/regby-web/compare/v1.2.0...v1.3.0) (2026-10-22)
+
+
+### Bug Fixes
+
+* align code countdown with the broker clock ([596d28e](https://github.com/ZenTenApp/regby-web/commit/596d28ef3d2b5353962577cccfd164e877803358))
+
+
+### Features
+
+* SSH login subaccount and merchant as default role ([0b6da78](https://github.com/ZenTenApp/regby-web/commit/0b6da78d519b98d9d27475de249ea9704f6b32e1))
+
 # [1.2.0](https://github.com/ZenTenApp/regby-web/compare/v1.1.0...v1.2.0) (2026-10-20)
 
 
