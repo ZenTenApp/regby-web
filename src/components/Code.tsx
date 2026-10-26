@@ -3,9 +3,13 @@
  * inputs for the customer. Both share the grouping and colours so the digits
  * a customer types sit under the same bars they read off the merchant screen.
  */
-import { useEffect, useRef, type ClipboardEvent, type CSSProperties, type KeyboardEvent } from 'react';
+import { Clipboard } from 'lucide-react';
+import { useEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent } from 'react';
 
 import { REGBY_CODE_GROUP, REGBY_CODE_LENGTH } from '@/config/regby';
+import { CLIPBOARD_BLOCKED_TEXT, readClipboard } from '@/lib/clipboard';
+
+import { ICON_SIZE } from './icon';
 
 const GROUP_COUNT = REGBY_CODE_LENGTH / REGBY_CODE_GROUP;
 const GROUPS = Array.from({ length: GROUP_COUNT }, (_, i) => i);
@@ -24,12 +28,16 @@ const pastedDigits = (text: string) => {
   return /^\d+$/.test(digits) ? digits.slice(0, REGBY_CODE_LENGTH) : null;
 };
 
+/** Read-only code; an empty `code` (expired, or none to show) draws placeholders. */
 export function CodeDisplay({ code }: { code: string }) {
+  const empty = code === '';
   return (
-    <div className="code-groups" aria-label={`ReGBY code ${code}`}>
+    <div className="code-groups" role="img" aria-label={empty ? 'No ReGBY code' : `ReGBY code ${code}`}>
       {GROUPS.map((group) => (
         <div key={group} className="code-group" style={barColor(group)}>
-          <div className="code-box">{groupOf(code, group)}</div>
+          <div className="code-box" data-empty={empty}>
+            {groupOf(code, group)}
+          </div>
         </div>
       ))}
     </div>
@@ -48,10 +56,11 @@ interface CodeInputProps {
  * an empty box steps back, and a paste anywhere fills from the first box.
  * Digits typed with no field focused land in the code too, so a hardware
  * keyboard needs no click first. Never autofocused: the on-screen keyboard
- * stays down until the customer taps a box, so it does not cover the camera.
+ * stays down until the customer taps a box, so it does not cover the screen.
  */
 export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const [pasteBlocked, setPasteBlocked] = useState(false);
   const focus = (group: number) => refs.current[Math.max(0, Math.min(group, GROUP_COUNT - 1))]?.focus();
   // Read by the document listeners, which are bound once per enable.
   const valueRef = useRef(value);
@@ -122,27 +131,50 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
     fill(digits);
   };
 
+  const pasteButton = async () => {
+    const text = await readClipboard();
+    setPasteBlocked(text === null);
+    const digits = text === null ? null : pastedDigits(text);
+    if (digits !== null) fill(digits);
+  };
+
   return (
-    <div className="code-groups" data-invalid={invalid}>
-      {GROUPS.map((group) => (
-        <div key={group} className="code-group" style={barColor(group)}>
-          <input
-            ref={(node) => {
-              refs.current[group] = node;
-            }}
-            className="code-box"
-            value={groupOf(value, group)}
-            onChange={(event) => setGroup(group, event.target.value)}
-            onKeyDown={(event) => onKeyDown(group, event)}
-            onPaste={onPaste}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={REGBY_CODE_GROUP}
-            disabled={disabled}
-            aria-label={`Code digits ${group * REGBY_CODE_GROUP + 1} to ${(group + 1) * REGBY_CODE_GROUP}`}
-          />
-        </div>
-      ))}
+    <div className="code-input">
+      <div className="code-input-actions">
+        <button
+          type="button"
+          className="icon-button"
+          disabled={disabled}
+          aria-label="Paste code"
+          onClick={() => void pasteButton()}
+        >
+          <Clipboard size={ICON_SIZE} />
+        </button>
+      </div>
+      <div className="code-groups" data-invalid={invalid}>
+        {GROUPS.map((group) => (
+          <div key={group} className="code-group" style={barColor(group)}>
+            <input
+              ref={(node) => {
+                refs.current[group] = node;
+              }}
+              className="code-box"
+              value={groupOf(value, group)}
+              onChange={(event) => setGroup(group, event.target.value)}
+              onKeyDown={(event) => onKeyDown(group, event)}
+              onPaste={onPaste}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={REGBY_CODE_GROUP}
+              // A blank placeholder only enables `:placeholder-shown`, which draws the empty-pair dashes.
+              placeholder=" "
+              disabled={disabled}
+              aria-label={`Code digits ${group * REGBY_CODE_GROUP + 1} to ${(group + 1) * REGBY_CODE_GROUP}`}
+            />
+          </div>
+        ))}
+      </div>
+      {pasteBlocked && <p className="field-hint">{CLIPBOARD_BLOCKED_TEXT}</p>}
     </div>
   );
 }

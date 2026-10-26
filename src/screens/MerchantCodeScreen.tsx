@@ -1,17 +1,18 @@
 /**
- * Merchant step 2: the shared text as a QR and the minted code as digits,
- * counting down to the code's expiry, and switching to "redeemed" when the
- * broker reports a customer.
+ * Merchant step 2: the shared text as a QR (when enabled) and the minted code
+ * as digits, counting down to the code's expiry, and switching to "redeemed"
+ * when the broker reports a customer.
  */
-import { CircleCheck, Clock, RefreshCw } from 'lucide-react';
+import { CircleCheck, Clock, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { CodeDisplay } from '@/components/Code';
-import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
+import { CopyButton } from '@/components/CopyButton';
+import { Page, ScreenHeader } from '@/components/Layout';
 import { QrCode } from '@/components/QrCode';
 import { Spinner } from '@/components/Spinner';
 import { ICON_SIZE } from '@/components/icon';
-import { shortNpub } from '@/lib/npub';
+import { npub, shortNpub } from '@/lib/npub';
 import { useAction } from '@/lib/use-action';
 import { useNow } from '@/lib/use-now';
 import type { MintedCode } from '@/services/regby/client';
@@ -26,11 +27,12 @@ interface MerchantCodeScreenProps {
   minted: MintedCode;
   /** The shared text itself, carried by the QR; the code is the typed path. */
   content: string;
+  showQr: boolean;
   onRegenerate: () => Promise<void>;
   onBack: () => void;
 }
 
-export function MerchantCodeScreen({ minted, content, onRegenerate, onBack }: MerchantCodeScreenProps) {
+export function MerchantCodeScreen({ minted, content, showQr, onRegenerate, onBack }: MerchantCodeScreenProps) {
   const now = useNow();
   const [customer, setCustomer] = useState<string | null>(null);
   const { run, busy, error } = useAction(onRegenerate, regbyErrorText);
@@ -50,42 +52,50 @@ export function MerchantCodeScreen({ minted, content, onRegenerate, onBack }: Me
   return (
     <Page role="merchant">
       <ScreenHeader role="merchant" onBack={onBack} />
-      <ScreenTitle title="Payment Requested" subtitle="You've successfully created your Payment Request & Code." />
-
-      <QrCode value={content} label="QR code of the shared text" />
-      {/* Only the code expires; the QR carries the text itself and stays valid. */}
-      <div className="code-panel" data-expired={phase === 'expired'}>
-        <p className="code-caption">or share Regby Code</p>
-        <CodeDisplay code={minted.code} />
-      </div>
-
-      {phase === 'redeemed' && customer !== null && (
-        <p className="status" data-tone="success">
-          <CircleCheck size={ICON_SIZE} />
-          Redeemed by {shortNpub(customer)}
-        </p>
-      )}
-      {phase === 'expired' && (
+      {showQr && (
         <>
-          <p className="status" data-tone="danger">
-            <Clock size={ICON_SIZE} />
-            Code expired
-          </p>
-          <div className="stack stack-gap">
-            <button type="button" className="btn btn-compact" disabled={busy} onClick={() => void run()}>
-              {busy ? <Spinner /> : <RefreshCw size={ICON_SIZE} />}
-              Generate new code
-            </button>
-          </div>
-          {error && <p className="error">{error}</p>}
+          <QrCode value={content} label="QR code of the shared text" />
+          <p className="divider">or share ReGBY Code</p>
         </>
       )}
+
       {phase === 'live' && (
-        <p className="status">
-          <Clock size={ICON_SIZE} />
-          Expires in {formatRemaining(remaining)}
+        <div className="code-status-row">
+          <button
+            type="button"
+            className="icon-button"
+            disabled={busy}
+            aria-label="Generate a new code"
+            onClick={() => void run()}
+          >
+            {busy ? <Spinner /> : <RotateCcw size={ICON_SIZE} />}
+          </button>
+          <p className="status">
+            <Clock size={ICON_SIZE} />
+            Expires in {formatRemaining(remaining)}
+          </p>
+          <CopyButton variant="icon" text={minted.code} label="code" />
+        </div>
+      )}
+      {phase === 'expired' && (
+        <p className="status code-status">
+          Code expired.
+          <button type="button" className="link-button" disabled={busy} onClick={() => void run()}>
+            {busy ? 'Requesting…' : 'Request new code.'}
+          </button>
         </p>
       )}
+      {phase === 'redeemed' && customer !== null && (
+        <p className="status code-status" data-tone="success">
+          <CircleCheck size={ICON_SIZE} />
+          Redeemed by {shortNpub(customer)}
+          <CopyButton variant="icon" text={npub(customer)} label="customer npub" />
+        </p>
+      )}
+
+      {/* Only the code expires; the QR carries the text itself and stays valid. */}
+      <CodeDisplay code={phase === 'expired' ? '' : minted.code} />
+      {error && <p className="error">{error}</p>}
     </Page>
   );
 }

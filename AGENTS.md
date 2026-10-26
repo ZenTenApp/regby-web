@@ -8,7 +8,6 @@ directly, or types the code and gets the text back through the broker.
 ## Rules
 - The broker is untrusted. Never render broker-supplied text except the
   redeemed content, and render that as plain text only (no HTML, no links).
-  Text from a scanned QR is equally untrusted and gets the same treatment.
 - The reply intent decides success or failure, never the content: a success
   may carry empty content.
 - Empty content is never encrypted, in either direction.

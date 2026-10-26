@@ -2,12 +2,12 @@
 
 Mobile-friendly web client for [ReGBY](../regby-middleware/docs/protocol.md).
 
-- **Merchant**: enter any text (empty allowed: shows a blank scan frame), get it back as a QR plus a one-minute 8-digit
+- **Merchant**: enter any text (empty allowed: shows an empty-QR placeholder), get it back as a QR plus a one-minute 8-digit
   code shown as four coloured pairs. The screen flips to "Redeemed by npub…"
   when a customer redeems the code.
-- **Customer**: scan the QR (the text itself, no broker involved) or type the
-  code (redeemed through the broker); the merchant's text is shown exactly as
-  written, with a Copy button.
+- **Customer**: read the QR with the phone's own camera (the text itself, no
+  broker involved) or type the code (redeemed through the broker); the
+  merchant's text is shown exactly as written, with a Copy button.
 
 Login, after picking a role: a throwaway key for this tab, a NIP-07 signer
 extension, or a passphrase-protected Ed25519 OpenSSH key (pasted or from
@@ -19,7 +19,7 @@ file). The SSH key derives the same npub as `chat` and `usdt-pay`.
 npm install
 cp .env.example .env     # broker pubkey, production by default
 npm run dev              # http://localhost:5173
-npm run dev:lan          # https on the LAN, so a phone can open the camera
+npm run dev:lan          # https on the LAN, so Paste works on a phone
 ```
 
 | script | does |

@@ -6,7 +6,6 @@ import type { CSSProperties } from 'react';
 
 import { Page } from '@/components/Layout';
 import { Logo } from '@/components/Logo';
-import { ICON_SIZE } from '@/components/icon';
 import { ROLES, ROLE_ORDER, type Role } from '@/components/roles';
 import { errorMessage } from '@/lib/errors';
 import { useAction } from '@/lib/use-action';
@@ -23,12 +22,12 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
   const { run, busy, error } = useAction(async () => onSigner(await extensionSigner()), errorMessage);
 
   return (
-    <Page role={role}>
+    <Page role={role} footerInCard>
       <div className="brand">
         <Logo />
       </div>
+      <p className="tagline">Simple Pairing Communications Protocol</p>
 
-      <p className="section-label">Please Select</p>
       <div
         className="role-row"
         role="radiogroup"
@@ -46,16 +45,16 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
               aria-checked={role === option}
               onClick={() => onRole(option)}
             >
-              <Icon size={ICON_SIZE} />
+              <Icon />
               {label}
             </button>
           );
         })}
       </div>
 
-      <div className="stack">
+      <div className="stack stack-lg">
         <button type="button" className="btn" disabled={busy} onClick={() => onSigner(generatedSigner())}>
-          Generate KeyPair
+          Demo KeyPair
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => void run()}>
           Login with Signer
@@ -65,6 +64,7 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
         </button>
       </div>
       {error && <p className="error">{error}</p>}
+      <div className="spacer" />
     </Page>
   );
 }

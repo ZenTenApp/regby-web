@@ -24,9 +24,7 @@ type Screen =
   | { kind: 'merchant-compose' }
   | { kind: 'merchant-code'; minted: MintedCode; content: string }
   | { kind: 'customer-redeem' }
-  // `from` is null for a scanned QR: the text came off the merchant's screen,
-  // not through the broker, so there is no signed sender.
-  | { kind: 'customer-content'; content: string; from: string | null };
+  | { kind: 'customer-content'; content: string; code: string; from: string };
 
 interface Session {
   signer: Signer;
@@ -43,6 +41,9 @@ export function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'login' });
   const [session, setSession] = useState<Session | null>(null);
   const [draft, setDraft] = useState('');
+  // Whether the code screen also shows the text as a QR; a merchant preference,
+  // so it survives sign-out unlike the draft.
+  const [showQr, setShowQr] = useState(true);
 
   const signIn = useCallback(
     (signer: Signer) => {
@@ -73,7 +74,7 @@ export function App() {
     async (code: string) => {
       if (!session) return;
       const { content, from } = await session.client.redeem(code);
-      setScreen({ kind: 'customer-content', content, from });
+      setScreen({ kind: 'customer-content', content, code, from });
     },
     [session],
   );
@@ -91,12 +92,22 @@ export function App() {
     case 'ssh':
       return <SshKeyScreen role={role} onBack={() => setScreen({ kind: 'login' })} onSigner={signIn} />;
     case 'merchant-compose':
-      return <MerchantComposeScreen draft={draft} onDraft={setDraft} onGenerate={mint} onBack={signOut} />;
+      return (
+        <MerchantComposeScreen
+          draft={draft}
+          onDraft={setDraft}
+          showQr={showQr}
+          onShowQr={setShowQr}
+          onGenerate={mint}
+          onBack={signOut}
+        />
+      );
     case 'merchant-code':
       return (
         <MerchantCodeScreen
           minted={screen.minted}
           content={screen.content}
+          showQr={showQr}
           onRegenerate={() => {
             // The old code is expired; stop listening for it before re-minting.
             screen.minted.stop();
@@ -109,17 +120,12 @@ export function App() {
         />
       );
     case 'customer-redeem':
-      return (
-        <CustomerRedeemScreen
-          onRedeem={redeem}
-          onScanned={(content) => setScreen({ kind: 'customer-content', content, from: null })}
-          onBack={signOut}
-        />
-      );
+      return <CustomerRedeemScreen onRedeem={redeem} onBack={signOut} />;
     case 'customer-content':
       return (
         <CustomerContentScreen
           content={screen.content}
+          code={screen.code}
           from={screen.from}
           onBack={() => setScreen({ kind: 'customer-redeem' })}
         />

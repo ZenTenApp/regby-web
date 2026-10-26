@@ -9,9 +9,10 @@ project root and this spec:
 
 - **Merchant**: pick role, log in (extension, or SSH key pasted or from file),
   enter multi-line content, generate a code, see a QR and the ReGBY code.
-- **Customer**: camera in the top third of the screen, code inputs below, the
-  keyboard hidden until an input is tapped; then the redeemed content shown as
-  plain text (newlines kept, like a chat app) with a Copy button.
+- **Customer**: code inputs under an empty text box, the keyboard hidden until
+  an input is tapped; then the redeemed content shown in that box as plain
+  text (newlines kept, like a chat app) with a Copy button. The merchant's QR
+  is read by the phone's own camera; the app has no scanner.
 - Every screen has a Back button.
 
 ## Sources read before writing code
@@ -29,7 +30,7 @@ project root and this spec:
 
 | topic | decision | why |
 | --- | --- | --- |
-| Stack | Vite, React 19, strict TS, `nostr-tools`, `qrcode`, `qr-scanner`, `lucide-react`, `@fontsource/inter` | Matches `chat`; strict CSP means no CDN fonts |
+| Stack | Vite, React 19, strict TS, `nostr-tools`, `qrcode`, `lucide-react`, `@fontsource/inter` | Matches `chat`; strict CSP means no CDN fonts |
 | Login options | Generate KeyPair, Login with Signer (NIP-07), Login with SSH Key | The Login PNG shows all three (its "Paste SSH Key" renamed); spec names the last two |
 | SSH derivation | Ed25519 seed, BIP39 entropy, NIP-06 `m/44'/1237'/0'/0/0` | Same npub as chat and usdt-pay; pinned by a test using chat's vectors |
 | Unencrypted SSH keys | Refused | Same rule as chat |
@@ -60,9 +61,6 @@ project root and this spec:
 - Bug found and fixed: a broker refusal arriving before the publish settled
   was an unhandled rejection; the reply promise is now observed before
   publishing.
-- Not tested: real camera scanning (headless Chrome has no camera). The
-  "Camera unavailable" fallback was seen. Test on a phone with
-  `npm run dev:lan`.
 
 ## Open points
 

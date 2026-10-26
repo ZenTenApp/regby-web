@@ -2,43 +2,67 @@
   --bg: #f2f3f7;
   --card: #ffffff;
   --text: #111318;
-  --muted: #6b7180;
-  --faint: #a3a8b4;
-  --border: #d4d7de;
-  --border-strong: #9ea3ad;
+  /* Back, switch labels, countdown. */
+  --muted: #8a909e;
+  /* Subtitles, counters, the sender line, the eye toggle. */
+  --subtle: #a7a7a7;
+  /* Placeholders and the footer. */
+  --faint: #b6b6b6;
+  /* Chip labels and icons. */
+  --ink: #2b2b2b;
+  --border: #d9d9d9;
+  --border-strong: #a7a7a7;
   --field: #ffffff;
   /* Text and icons on a filled accent background. */
   --on-accent: #ffffff;
   --disabled-bg: #e3e5ea;
   --disabled-text: var(--faint);
-  --toggle-track: #eceef2;
+  --toggle-track: #eceef3;
+  /* Unpicked option on the login role toggle. */
+  --toggle-idle: #4a515f;
+  /* Background of the merchant's output switches. */
+  --panel: #f3f3f3;
   --danger: #d93a3a;
-  --success: #1f9d55;
+  --success: #2ca05e;
 
-  --merchant: #135a8a;
-  --customer: #12897f;
+  --merchant: #0f5a88;
+  --customer: #0f8888;
   /* Overridden per role on `.card`, so every control follows the role colour. */
   --accent: #3b4250;
 
   /* One colour per code pair, shared by the merchant display and customer input. */
-  --code-1: #e04848;
-  --code-2: #22a05a;
-  --code-3: #2f64b6;
-  --code-4: #e8b323;
-
-  --scanner-bg: #d9d9d9;
-  --scanner-bracket: #000;
+  --code-1: #e04b47;
+  --code-2: #2ca05e;
+  --code-3: #3364af;
+  --code-4: #e8b62c;
+  /* The "or share ReGBY Code" caption. */
+  --caption: #676767;
+  /* Code boxes and the hairlines either side of the divider caption. */
+  --hairline: #f0f0f0;
+  /* QR modules and the empty-QR placeholder. */
+  --qr-ink: #2e2e34;
 
   /* Type scale: the small sizes repeat across many blocks, so a rescale is
      one edit here and paired elements (hint and note) cannot drift apart. */
+  /* Footer and the divider caption. */
+  --text-2xs: 9px;
   --text-xs: 12px;
   --text-sm: 13px;
   --text-md: 15px;
+  /* Role badge and button labels. */
+  --text-lg: 18px;
+  /* Typed text in fields: below 16 px iOS zooms the page on focus. */
+  --text-field: 16px;
 
-  --radius: 10px;
+  /* Card and buttons (Figma 16), fields and panels (12), chips and code boxes (10). */
+  --radius: 12px;
+  --radius-md: 9px;
   --radius-sm: 7px;
-  /* Width of the button column, scaled down from the Figma's 392 px. */
-  --column: 320px;
+  /* Every size here is the Figma's (560 px card) times 0.75, for a 420 px card.
+     Width of the button column: the Figma's 392 px. */
+  --column: 294px;
+  /* Between the login buttons (Figma 16). */
+  --login-gap: 12px;
   --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 4px 16px rgb(16 24 40 / 6%);
 
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -68,27 +92,36 @@ textarea {
 /* ---------- page + card ---------- */
 
 .page {
-  min-height: 100dvh;
+  /* Exactly the viewport, so the card shrinks to fit rather than the page scrolling. */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: max(12vh, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  /* Top-aligned, not centred: the Figma pins the card 80 of 1080 px from the top. */
+  padding: max(clamp(20px, 7.4dvh, 60px), env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
 }
 
-/* One fixed size for every screen, fitted to the tallest (SSH login), so the
-   card never jumps between screens; anything longer scrolls inside it. */
+/* One size for every screen, so the card never jumps between screens. On a
+   short viewport it shrinks instead, and its media (QR, text box, code)
+   scale with it through `cqh` units; the inner scroll is only a last resort. */
 .card {
-  --card-height: 650px;
+  /* The Figma's 750 px. */
+  --card-height: 562px;
+  /* What the rest of the screen needs beside a text box, so the box keeps its
+     full height on a full card and gives way first on a shrunk one. */
+  --textarea-room: 318px;
+  container-type: size;
   width: 100%;
   max-width: 420px;
   height: var(--card-height);
-  flex-shrink: 0;
+  min-height: 0;
+  flex-shrink: 1;
   overflow-y: auto;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 28px 32px;
+  padding: 32px 42px 40px;
   display: flex;
   flex-direction: column;
 }
@@ -103,17 +136,22 @@ textarea {
 
 .footer {
   color: var(--faint);
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
+}
+
+.card > .footer {
+  text-align: center;
+}
+
+/* The login footer sits lower than other screens' actions (Figma: 37 px from
+   the edge), so that card closes with less padding. */
+.card[data-footer-in-card='true'] {
+  padding-bottom: 24px;
 }
 
 @media (max-width: 520px) {
-  .page {
-    padding-top: max(16px, env(safe-area-inset-top));
-  }
-
   .card {
-    --card-height: 610px;
-    padding: 22px 18px;
+    padding: 24px 18px 28px;
   }
 }
 
@@ -131,23 +169,23 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 17px;
-}
-
-.role-icon svg {
-  width: 55%;
-  height: 55%;
+  font-size: var(--text-lg);
 }
 
 .role-icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   color: var(--on-accent);
   background: var(--accent);
   flex-shrink: 0;
+}
+
+.role-icon svg {
+  width: 55%;
+  height: 55%;
 }
 
 .back {
@@ -165,8 +203,12 @@ textarea {
   cursor: pointer;
 }
 
-.back:hover {
+.back:hover:not(:disabled) {
   color: var(--text);
+}
+
+.back:disabled {
+  cursor: not-allowed;
 }
 
 .title {
@@ -177,10 +219,14 @@ textarea {
 }
 
 .subtitle {
-  margin: 0 0 20px;
-  color: var(--muted);
-  font-size: var(--text-sm);
+  margin: 0 0 16px;
+  color: var(--subtle);
+  font-size: var(--text-xs);
   line-height: 1.4;
+}
+
+.centered {
+  text-align: center;
 }
 
 /* ---------- brand (login) ---------- */
@@ -188,15 +234,15 @@ textarea {
 .brand {
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
+  margin: 9px 0 19px;
 }
 
 /* Fixed box so switching variants (different aspect ratios) never shifts the
    layout; each wordmark is fitted inside it. */
 .brand-logo {
   margin: 0;
-  width: min(220px, 100%);
-  height: 50px;
+  width: min(206px, 100%);
+  height: 46px;
 }
 
 .brand-logo button {
@@ -217,11 +263,11 @@ textarea {
   object-fit: contain;
 }
 
-.section-label {
-  margin: 0 0 8px;
+/* Its bottom margin is the Figma's gap down to the role toggle. */
+.tagline {
+  margin: 0 0 48px;
   text-align: center;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--text-xs);
 }
 
 /* ---------- buttons ---------- */
@@ -239,15 +285,19 @@ textarea {
    under the picked option. `--count` and `--thumb` come from the markup, so
    the geometry follows ROLE_ORDER instead of being written per role. */
 .role-row {
-  --pad: 4px;
+  /* Figma: 392x80 track, 180x60 options 12 px apart, scaled to the column. */
+  --pad: 8px;
+  --gap: 10px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--count), 1fr);
+  gap: var(--gap);
   width: 100%;
   max-width: var(--column);
-  margin: 0 auto 28px;
+  /* Figma: 67 px down to the first login button. */
+  margin: 0 auto 50px;
   padding: var(--pad);
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius-sm) + var(--pad));
   background: var(--toggle-track);
 }
 
@@ -257,10 +307,10 @@ textarea {
   top: var(--pad);
   bottom: var(--pad);
   left: var(--pad);
-  width: calc((100% - 2 * var(--pad)) / var(--count));
+  width: calc((100% - 2 * var(--pad) - (var(--count) - 1) * var(--gap)) / var(--count));
   border-radius: var(--radius-sm);
   background: var(--accent);
-  transform: translateX(calc(var(--thumb) * 100%));
+  transform: translateX(calc(var(--thumb) * (100% + var(--gap))));
   transition:
     transform 0.2s ease,
     background 0.2s ease;
@@ -272,14 +322,21 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 40px;
+  min-height: 45px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--muted);
+  color: var(--toggle-idle);
   font-size: var(--text-md);
   cursor: pointer;
   transition: color 0.2s ease;
+}
+
+/* Figma draws the role icons larger than inline text icons. */
+.role-button svg {
+  width: 1.4em;
+  height: 1.4em;
+  flex-shrink: 0;
 }
 
 .role-button:hover:not([aria-checked='true']) {
@@ -307,13 +364,14 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 48px;
+  /* The Figma's 80 px, giving way first when the card shrinks. */
+  min-height: clamp(44px, 12cqh, 60px);
   padding: 0 20px;
   border: 0;
   border-radius: var(--radius);
   background: var(--accent);
   color: var(--on-accent);
-  font-size: 16px;
+  font-size: var(--text-lg);
   cursor: pointer;
   transition:
     filter 0.15s,
@@ -330,21 +388,69 @@ textarea {
   cursor: not-allowed;
 }
 
-.btn-compact {
-  min-height: 42px;
-  font-size: var(--text-md);
+.stack-lg {
+  gap: var(--login-gap);
+}
+
+/* Bare icon action (copy, paste, regenerate): accent-coloured, 36 px hit area. */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--toggle-track);
+}
+
+.icon-button:disabled {
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.icon-button[data-state='copied'] {
+  color: var(--success);
+}
+
+.icon-button[data-state='failed'] {
+  color: var(--danger);
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-button:disabled {
+  color: var(--muted);
+  cursor: progress;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 33px;
   padding: 6px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--field);
+  color: var(--ink);
   font-size: var(--text-sm);
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -358,7 +464,7 @@ textarea {
   display: flex;
   flex-direction: column;
   border: 2px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--field);
 }
 
@@ -369,18 +475,31 @@ textarea {
 .field textarea {
   display: block;
   width: 100%;
-  min-height: 140px;
+  min-height: clamp(56px, 100cqh - var(--textarea-room), var(--textarea-max, 172px));
   padding: 14px 16px 4px;
   border: 0;
   outline: none;
   resize: vertical;
   background: transparent;
-  font-size: 16px;
+  font-size: var(--text-field);
   line-height: 1.4;
 }
 
-.field textarea::placeholder {
-  color: var(--muted);
+/* Smaller than the typed text, which stays 16 px so iOS does not zoom the field. */
+.field textarea::placeholder,
+.input::placeholder {
+  color: var(--faint);
+  font-size: var(--text-sm);
+}
+
+/* The SSH key box, Upload row included, is the Figma's 252 px. */
+.ssh-key-field {
+  --textarea-max: 135px;
+}
+
+/* A fixed box like the Figma's; a pasted key scrolls inside it. */
+.ssh-key-field textarea {
+  resize: none;
 }
 
 /* A row under the text rather than floating over it, so long input never
@@ -389,18 +508,18 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
-  padding: 8px 12px 12px;
+  padding: 0 16px 16px;
 }
 
 .input {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 14px;
   border: 2px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   outline: none;
   background: var(--field);
-  font-size: 16px;
+  font-size: var(--text-field);
 }
 
 .input:focus {
@@ -432,12 +551,123 @@ textarea {
   height: 100%;
   border: 0;
   background: none;
-  color: var(--muted);
+  color: var(--subtle);
   cursor: pointer;
 }
 
 .masked-toggle:hover {
   color: var(--text);
+}
+
+/* Counter and actions under a field, outside its border. */
+.field-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.field-count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  color: var(--subtle);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-count[data-full='true'] {
+  color: var(--danger);
+}
+
+/* ---------- output switches (merchant) ---------- */
+
+.output-options {
+  display: flex;
+  flex-wrap: wrap;
+  /* Figma: equal 24 px insets at both ends, equal gaps between the switches. */
+  justify-content: space-between;
+  /* Small minimum, so all three still fit one row on a 390 px phone. */
+  gap: 10px 8px;
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch:has(.switch-input:disabled) {
+  cursor: not-allowed;
+}
+
+/* Figma: 50x24 track with ON/OFF lettered on the knob. */
+.switch-input {
+  --w: 38px;
+  --h: 18px;
+  /* Even, whole-pixel inset (2 px) so the knob does not sit between pixels. */
+  --knob: 14px;
+  position: relative;
+  flex-shrink: 0;
+  width: var(--w);
+  height: var(--h);
+  margin: 0;
+  border-radius: calc(var(--h) / 2);
+  background: var(--border);
+  appearance: none;
+  cursor: inherit;
+  transition: background 0.2s ease;
+}
+
+/* ON/OFF are the Figma's letter shapes as images, not text: text snaps to
+   whole pixels while the knob does not, which left the label off-centre. */
+.switch-input::before {
+  content: '';
+  position: absolute;
+  top: calc((var(--h) - var(--knob)) / 2);
+  left: calc((var(--h) - var(--knob)) / 2);
+  width: var(--knob);
+  height: var(--knob);
+  border-radius: 50%;
+  background: var(--field) url('./assets/icons/switch-off.svg') center / 100% no-repeat;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 20%);
+  transition: transform 0.2s ease;
+}
+
+.switch-input:checked {
+  background: var(--success);
+}
+
+.switch-input:checked::before {
+  background-image: url('./assets/icons/switch-on.svg');
+  transform: translateX(calc(var(--w) - var(--h)));
+}
+
+/* Locked on (ReGBY): the Figma draws it at half strength. */
+.switch-input:checked:disabled {
+  background: color-mix(in srgb, var(--success) 50%, transparent);
+}
+
+.switch-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch-input,
+  .switch-input::before {
+    transition: none;
+  }
 }
 
 .field-hint {
@@ -446,31 +676,26 @@ textarea {
   font-size: var(--text-xs);
 }
 
+/* A wrapper (such as a form) that passes the card's column layout through,
+   so a `.spacer` inside it still takes the spare height. */
+.card-fill {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+/* `hidden` must win over the flex display of classes like `.card-fill`. */
+[hidden] {
+  display: none !important;
+}
+
 .spacer {
   /* Takes the card's spare height, so primary actions sit at its foot. */
-  flex: 1 0 28px;
+  flex: 1 0 8px;
 }
 
 .field-gap {
-  margin-top: 12px;
-}
-
-.stack-gap {
   margin-top: 14px;
-}
-
-.code-panel[data-expired='true'] {
-  opacity: 0.35;
-}
-
-@media (max-width: 520px) {
-  .field textarea {
-    min-height: 120px;
-  }
-
-  .spacer {
-    height: 20px;
-  }
 }
 
 /* ---------- feedback ---------- */
@@ -503,10 +728,6 @@ textarea {
   color: var(--success);
 }
 
-.status[data-tone='danger'] {
-  color: var(--danger);
-}
-
 .spinner {
   animation: spin 0.9s linear infinite;
 }
@@ -519,47 +740,119 @@ textarea {
 
 /* ---------- code (display + input) ---------- */
 
-.code-caption {
-  margin: 0 0 12px;
-  color: var(--muted);
-  text-align: center;
-  font-size: var(--text-sm);
+/* Hairline either side of a short caption, between the QR and the code. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: clamp(10px, 5cqh, 29px) 0 clamp(8px, 3cqh, 15px);
+  color: var(--caption);
+  font-size: var(--text-2xs);
+  white-space: nowrap;
 }
 
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  background: var(--hairline);
+}
+
+/* Sizes shared by the code and the status row above it, which the Figma
+   spans exactly as wide as the four boxes. */
+.code-groups,
+.code-status-row {
+  --code-size: min(60px, 18cqw, 12.3cqh);
+  --code-gap: min(12px, 3cqw);
+}
+
+/* Regenerate, countdown and copy above the merchant's code. */
+.code-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: calc(4 * var(--code-size) + 3 * var(--code-gap));
+  margin: 0 auto 15px;
+}
+
+.code-status-row .status {
+  margin: 0;
+}
+
+/* Expired or redeemed: a single status line in the row's place. */
+.code-status {
+  min-height: 36px;
+  margin: 0 0 15px;
+}
+
+/* Figma: 128 px from the text box down to the code. */
+.code-after-content {
+  margin-top: clamp(20px, 10cqh, 52px);
+}
+
+.code-input {
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.code-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  /* Paste row plus this gap equals the content screen's footer row, so the
+     code boxes do not move when the redeemed text arrives. */
+  margin-bottom: 8px;
+}
+
+/* Scales with the card on short or narrow screens, so the code never forces a scroll. */
 .code-groups {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: var(--code-gap);
 }
 
 .code-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 58px;
+  gap: 9px;
+  width: var(--code-size);
 }
 
 .code-group::after {
   content: '';
-  height: 5px;
+  height: 6px;
   border-radius: 4px;
   background: var(--bar);
 }
 
 .code-box {
   width: 100%;
-  height: 58px;
-  border: 1.5px solid var(--border);
+  height: var(--code-size);
+  border: 1.5px solid var(--hairline);
   border-radius: var(--radius-sm);
   background: var(--field);
   display: grid;
   place-items: center;
-  font-size: 30px;
+  font-size: calc(var(--code-size) * 0.68);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
+/* Two short bars for a pair with no digits yet, on the display and the input
+   alike. Drawn rather than typed: Chrome will not centre an input placeholder. */
+.code-box[data-empty='true'],
+input.code-box:placeholder-shown:not(:focus) {
+  --dash: linear-gradient(var(--subtle), var(--subtle));
+  background:
+    var(--dash) calc(50% - 0.32em) 50% / 0.48em 0.08em no-repeat,
+    var(--dash) calc(50% + 0.32em) 50% / 0.48em 0.08em no-repeat,
+    var(--field);
+}
+
 input.code-box {
+  /* Grid (from .code-box) left-aligns an input's placeholder in Chrome. */
+  display: block;
   padding: 0;
   outline: none;
   caret-color: var(--text);
@@ -573,30 +866,15 @@ input.code-box:focus {
   border-color: var(--danger);
 }
 
-@media (max-width: 520px) {
-  .code-groups {
-    gap: 8px;
-  }
-
-  .code-group {
-    width: min(58px, 17vw);
-  }
-
-  .code-box {
-    height: min(58px, 17vw);
-    font-size: min(30px, 8vw);
-  }
-}
-
 /* ---------- QR ---------- */
 
 .qr {
   display: block;
-  width: 200px;
-  max-width: 60vw;
+  flex-shrink: 0;
+  width: min(196px, 60cqw, 40cqh);
   height: auto;
   aspect-ratio: 1;
-  margin: 0 auto 16px;
+  margin: 0 auto;
 }
 
 img.qr {
@@ -615,78 +893,36 @@ img.qr {
   text-align: center;
 }
 
-/* ---------- camera ---------- */
-
-/* Square scanner from the Figma (254 px, 23 px corners), scaled down; the
-   brackets sit centred on its edge, so they overhang it by half their stroke. */
-.camera {
-  position: relative;
-  width: min(200px, 100% - 12px);
-  aspect-ratio: 1;
-  margin: 4px auto 28px;
-}
-
-.camera-view {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  /* The Figma's 23 px on a 254 px box, kept proportional at any size. */
-  border-radius: 9.06%;
-  background: var(--scanner-bg);
-  outline: 4px solid var(--scanner-bg);
-  outline-offset: -2px;
-}
-
-.camera video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
+/* Merchant's QR placeholder when there is no text to encode. */
 .qr-empty {
-  position: relative;
+  color: var(--qr-ink);
 }
 
-.scan-frame {
-  position: absolute;
-  inset: 0;
+.qr-empty svg {
+  display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  fill: none;
-  stroke: var(--scanner-bracket);
-  stroke-width: 11;
-  stroke-linecap: round;
-}
-
-.camera-message {
-  position: absolute;
-  inset: 50% 20px auto;
-  transform: translateY(-50%);
-  margin: 0;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / 90%);
-  color: var(--muted);
-  font-size: var(--text-xs);
-  text-align: center;
 }
 
 /* ---------- redeemed content ---------- */
 
+/* Empty on the redeem screen and filled on the content screen, so the text
+   arrives in place. */
 .content-box {
-  min-height: 160px;
-  max-height: 45dvh;
+  flex-shrink: 0;
+  /* Figma: the box sits lower under the header than other screens' content. */
+  margin-top: 16px;
+  aspect-ratio: 16 / 9;
+  max-height: 39cqh;
   overflow: auto;
   padding: 16px;
   border: 2px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   /* Show the merchant's text exactly as typed: line breaks, runs of spaces,
      long unbroken strings such as addresses wrapping instead of overflowing. */
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.45;
 }
 
@@ -696,9 +932,12 @@ img.qr {
 }
 
 .peer {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  color: var(--subtle);
+  font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 

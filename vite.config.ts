@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
+import svgr from 'vite-plugin-svgr';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 // CI's release step sets package.json to the version being tagged before it
@@ -25,9 +26,10 @@ export default defineConfig(({ command, mode }) => {
   return {
     define: { __APP_VERSION__: JSON.stringify(version) },
 
-    // Browsers only open the camera on a secure origin. `localhost` counts, a
-    // phone on the LAN does not, so `npm run dev:lan` serves a self-signed cert.
-    plugins: [react(), tsconfigPaths(), ...(mode === 'lan' ? [basicSsl()] : [])],
+    // Browsers only allow clipboard reads (Paste) on a secure origin. `localhost`
+    // counts, a phone on the LAN does not, so `npm run dev:lan` serves a self-signed cert.
+    // svgr turns `*.svg?react` imports into components, so icons inherit `currentColor`.
+    plugins: [react(), svgr(), tsconfigPaths(), ...(mode === 'lan' ? [basicSsl()] : [])],
 
     // The key worker is an ES module importing the ssh services, so the `@/`
     // alias has to be registered for the worker build too.
