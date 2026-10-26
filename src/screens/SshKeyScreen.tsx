@@ -242,9 +242,6 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
               ref={subaccountRef}
               placeholder="Subaccount"
               autoComplete="off"
-              spellCheck={false}
-              autoCapitalize="off"
-              autoCorrect="off"
               disabled={busy}
               onChange={(event) => {
                 setHasSubaccount(event.target.value !== '');

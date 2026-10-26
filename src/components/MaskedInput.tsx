@@ -26,6 +26,12 @@ export function MaskedInput({ className = '', ...rest }: ComponentProps<'input'>
         {...rest}
         type={revealed || CAN_MASK ? 'text' : 'password'}
         className={['input', masked && 'mask-chars', className].filter(Boolean).join(' ')}
+        // A text field, unlike a password one, is spellchecked (Chrome's enhanced
+        // spellcheck sends it off-device) and autocorrected or learned by phone
+        // keyboards. Set after `rest` so no caller can turn these back on.
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="off"
       />
       <button
         type="button"
