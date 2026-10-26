@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.5.0](https://github.com/ZenTenApp/regby-web/compare/v1.4.0...v1.5.0) (2026-10-26)
+
+
+### Features
+
+* Figma redesign, two-step SSH login, no in-app scanner ([f9db01b](https://github.com/ZenTenApp/regby-web/commit/f9db01bad2fc2948766759d5c2309b354cd5633b))
+
 # [1.4.0](https://github.com/ZenTenApp/regby-web/compare/v1.3.0...v1.4.0) (2026-10-22)
 
 
