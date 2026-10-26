@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1](https://github.com/ZenTenApp/regby-web/compare/v1.5.0...v1.5.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* keep the SSH passphrase out of spellcheck and autocorrect ([d76fcd2](https://github.com/ZenTenApp/regby-web/commit/d76fcd2cc37b6f0d43340098f7b233ebf2be6b15))
+
 # [1.5.0](https://github.com/ZenTenApp/regby-web/compare/v1.4.0...v1.5.0) (2026-10-26)
 
 
