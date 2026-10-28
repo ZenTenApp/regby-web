@@ -41,6 +41,8 @@
   --hairline: #f0f0f0;
   /* QR modules and the empty-QR placeholder. */
   --qr-ink: #2e2e34;
+  /* Sender and copy strips framing the redeemed text. */
+  --strip: #fdfdfd;
 
   /* Type scale: the small sizes repeat across many blocks, so a rescale is
      one edit here and paired elements (hint and note) cannot drift apart. */
@@ -392,24 +394,31 @@ textarea {
   gap: var(--login-gap);
 }
 
-/* Bare icon action (copy, paste, regenerate): accent-coloured, 36 px hit area. */
-.icon-button {
+/* Frameless actions: a bare icon (copy, regenerate) or an icon with a label
+   (Copy content). Copy feedback colours both the same way. */
+.icon-button,
+.text-button {
   display: inline-flex;
   align-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled),
+.text-button:hover {
+  background: var(--toggle-track);
+}
+
+/* Accent-coloured, 36 px hit area. */
+.icon-button {
   justify-content: center;
   width: 36px;
   height: 36px;
   flex-shrink: 0;
   padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
   color: var(--accent);
-  cursor: pointer;
-}
-
-.icon-button:hover:not(:disabled) {
-  background: var(--toggle-track);
 }
 
 .icon-button:disabled {
@@ -417,11 +426,26 @@ textarea {
   cursor: not-allowed;
 }
 
-.icon-button[data-state='copied'] {
+/* Ink label, accent icon. */
+.text-button {
+  gap: 6px;
+  padding: 4px 6px;
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.text-button svg {
+  color: var(--accent);
+}
+
+.icon-button[data-state='copied'],
+.text-button[data-state='copied'] svg {
   color: var(--success);
 }
 
-.icon-button[data-state='failed'] {
+.icon-button[data-state='failed'],
+.text-button[data-state='failed'] svg {
   color: var(--danger);
 }
 
@@ -787,22 +811,26 @@ textarea {
   margin: 0 0 15px;
 }
 
-/* Figma: 128 px from the text box down to the code. */
+/* Figma: 48 px from the text panel down to the code. */
 .code-after-content {
-  margin-top: clamp(20px, 10cqh, 52px);
+  margin-top: clamp(16px, 7cqh, 36px);
 }
 
 .code-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: fit-content;
   margin: 0 auto;
 }
 
-.code-input-actions {
-  display: flex;
-  justify-content: flex-end;
-  /* Paste row plus this gap equals the content screen's footer row, so the
-     code boxes do not move when the redeemed text arrives. */
-  margin-bottom: 8px;
+/* Figma: 247x49, 27 px under the colour bars. Below the code, so the boxes
+   sit where the content screen shows them. */
+.code-paste {
+  width: 185px;
+  min-height: 36px;
+  margin-top: clamp(12px, 4cqh, 20px);
+  border-radius: var(--radius-sm);
 }
 
 /* Scales with the card on short or narrow screens, so the code never forces a scroll. */
@@ -906,18 +934,74 @@ img.qr {
 
 /* ---------- redeemed content ---------- */
 
-/* Empty on the redeem screen and filled on the content screen, so the text
-   arrives in place. */
-.content-box {
+/* Sender strip, text, copy strip. Empty on the redeem screen and filled on
+   the content screen, so the text arrives in place. */
+.content-panel {
+  /* What the screen needs beside the panel, so the panel gives way first on
+     a shrunk card. */
+  --panel-room: 241px;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  /* Figma: the box sits lower under the header than other screens' content. */
+  /* Figma: 448x332. */
+  height: clamp(120px, 100cqh - var(--panel-room), 249px);
   margin-top: 16px;
-  aspect-ratio: 16 / 9;
-  max-height: 39cqh;
-  overflow: auto;
-  padding: 16px;
-  border: 2px solid var(--border-strong);
+  overflow: hidden;
+  border: 1.5px solid var(--hairline);
   border-radius: var(--radius-md);
+  background: var(--hairline);
+}
+
+.content-panel-head,
+.content-panel-foot {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 27px;
+  background: var(--strip);
+}
+
+.content-panel-head {
+  justify-content: space-between;
+  padding: 0 2px 0 12px;
+  color: var(--subtle);
+  font-size: var(--text-xs);
+}
+
+.content-panel-head .icon-button {
+  width: 27px;
+  height: 27px;
+}
+
+/* Figma's 16 px glyph in the header, scaled; the viewBox adds slack past the
+   stroke so sub-pixel rounding never clips it. Beats the em size in markup. */
+.content-panel-head .icon-button svg {
+  width: 14.4px;
+  height: 14.4px;
+}
+
+/* Figma's 20 px glyph on Copy content, scaled, with the same slack. */
+.content-panel-foot .text-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Grey like the sender it copies; the copied and failed colours still show. */
+.content-panel-head .icon-button[data-state='idle'] {
+  color: var(--subtle);
+}
+
+.content-panel-from {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 18px;
   /* Show the merchant's text exactly as typed: line breaks, runs of spaces,
      long unbroken strings such as addresses wrapping instead of overflowing. */
   white-space: pre-wrap;
@@ -926,19 +1010,29 @@ img.qr {
   line-height: 1.45;
 }
 
-.content-box[data-empty='true'] {
-  color: var(--muted);
-  font-style: italic;
+.content-panel-foot {
+  justify-content: center;
+  padding: 0 12px;
 }
 
-.peer {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+.content-panel-note {
   margin: 0;
   color: var(--subtle);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
+  font-size: var(--text-2xs);
+  text-align: center;
+}
+
+/* Redeem progress and errors, centred where the text will appear. */
+.content-panel-status {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  white-space: normal;
+}
+
+.content-panel-status .status,
+.content-panel-status .error {
+  margin: 0;
 }
 
 .visually-hidden {

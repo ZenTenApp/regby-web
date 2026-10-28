@@ -1,5 +1,5 @@
 /**
- * Customer step 1: the empty text box the redeemed text will fill, the code
+ * Customer step 1: the empty frame the redeemed text will fill, the code
  * boxes below. A full eight typed digits redeems the code through the broker;
  * no submit button. The merchant's QR needs no in-app scanner: it carries the
  * text itself, which a phone's own camera reads.
@@ -7,6 +7,7 @@
 import { useState } from 'react';
 
 import { CodeInput } from '@/components/Code';
+import { ContentPanel } from '@/components/ContentPanel';
 import { Page, ScreenHeader } from '@/components/Layout';
 import { Spinner } from '@/components/Spinner';
 import { REGBY_CODE_LENGTH } from '@/config/regby';
@@ -41,19 +42,26 @@ export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenP
   return (
     <Page role="customer">
       <ScreenHeader role="customer" onBack={onBack} />
-      {/* Same box the content screen fills, so the redeem reads as the text arriving in place. */}
-      <div className="content-box" aria-hidden="true" />
+      {/* Progress and errors sit where the text will appear, so the code and
+          Paste below keep the content screen's layout. */}
+      <ContentPanel>
+        <div className="content-panel-status">
+          {busy && (
+            <p className="status" role="status">
+              <Spinner />
+              Redeeming…
+            </p>
+          )}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+      </ContentPanel>
       <div className="code-after-content">
         <CodeInput value={digits} onChange={onChange} invalid={error !== null} disabled={busy} />
       </div>
-
-      {busy && (
-        <p className="status">
-          <Spinner />
-          Redeeming…
-        </p>
-      )}
-      {error && <p className="error">{error}</p>}
     </Page>
   );
 }

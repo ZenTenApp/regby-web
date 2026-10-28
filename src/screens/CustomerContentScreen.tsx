@@ -4,6 +4,7 @@
  * untrusted broker. Copy hands over the original verbatim.
  */
 import { CodeDisplay } from '@/components/Code';
+import { ContentPanel } from '@/components/ContentPanel';
 import { CopyButton } from '@/components/CopyButton';
 import { Page, ScreenHeader } from '@/components/Layout';
 import { npub, shortNpub } from '@/lib/npub';
@@ -25,19 +26,26 @@ export function CustomerContentScreen({ content, code, from, onBack }: CustomerC
     <Page role="customer">
       <ScreenHeader role="customer" onBack={onBack} />
 
-      <div className="content-box" data-empty={empty}>
-        {empty ? 'The merchant shared no text.' : text}
-      </div>
-      <div className="field-footer">
-        <p className="peer">
-          From {shortNpub(from)}
-          <CopyButton variant="icon" text={npub(from)} label="merchant npub" />
-        </p>
-        <CopyButton variant="chip" text={content} disabled={empty} />
-      </div>
+      <ContentPanel
+        head={
+          <>
+            <span className="content-panel-from">From: {shortNpub(from)}</span>
+            <CopyButton variant="icon" text={npub(from)} label="merchant npub" />
+          </>
+        }
+        foot={
+          empty ? (
+            <p className="content-panel-note">No content provided. Intended only for pairing npubs.</p>
+          ) : (
+            <CopyButton variant="text" text={content} label="content" />
+          )
+        }
+      >
+        {!empty && text}
+      </ContentPanel>
       {hadHidden && <p className="field-hint">Hidden characters were removed from the display. Copy keeps the original.</p>}
 
-      {/* Same height as the redeem screen's code, so the boxes stay put across the redeem. */}
+      {/* Same place as the redeem screen's code, so the boxes stay put across the redeem. */}
       <div className="code-after-content">
         <CodeDisplay code={code} />
       </div>

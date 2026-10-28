@@ -1,5 +1,8 @@
-import { Check, CircleAlert, Copy } from 'lucide-react';
+import { Check, CircleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+// Figma's own copy glyph rather than lucide's, to match the design.
+import CopyIcon from '@/assets/icons/copy.svg?react';
 
 import { ICON_SIZE } from './icon';
 
@@ -7,20 +10,20 @@ const COPIED_FEEDBACK_MS = 2000;
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
-const ICON = { idle: Copy, copied: Check, failed: CircleAlert } as const;
-const CHIP_TEXT: Record<CopyState, string> = { idle: 'Copy', copied: 'Copied', failed: 'Copy failed' };
+const ICON = { idle: CopyIcon, copied: Check, failed: CircleAlert } as const;
+const STATE_TEXT: Record<Exclude<CopyState, 'idle'>, string> = { copied: 'Copied', failed: 'Copy failed' };
 
-/** `icon` sits inline beside what it copies and needs `label` (what is copied)
- *  for its accessible name; `chip` is the labelled action under a field. */
-type CopyButtonProps = { text: string; disabled?: boolean } & (
-  | { variant: 'icon'; label: string }
-  | { variant: 'chip' }
-);
+/** `icon` sits inline beside what it copies; `text` is a labelled action
+ *  ("Copy content"). Both name what is copied with `label`. */
+interface CopyButtonProps {
+  variant: 'icon' | 'text';
+  text: string;
+  label: string;
+}
 
 /** Copies `text` verbatim and confirms in place, so every copy action in the
  *  app gives the same feedback without its own state. */
-export function CopyButton(props: CopyButtonProps) {
-  const { text, disabled = false } = props;
+export function CopyButton({ variant, text, label }: CopyButtonProps) {
   const [state, setState] = useState<CopyState>('idle');
 
   useEffect(() => {
@@ -39,11 +42,18 @@ export function CopyButton(props: CopyButtonProps) {
   };
 
   const Icon = ICON[state];
-  if (props.variant === 'chip') {
+  // width/height rather than lucide's `size`, which the SVGR glyph lacks.
+  const icon = <Icon width={ICON_SIZE} height={ICON_SIZE} />;
+  if (variant === 'text') {
     return (
-      <button type="button" className="chip" disabled={disabled} onClick={() => void copy()}>
-        <Icon size={ICON_SIZE} />
-        {CHIP_TEXT[state]}
+      <button
+        type="button"
+        className="text-button"
+        data-state={state}
+        onClick={() => void copy()}
+      >
+        {icon}
+        {state === 'idle' ? `Copy ${label}` : STATE_TEXT[state]}
       </button>
     );
   }
@@ -52,11 +62,10 @@ export function CopyButton(props: CopyButtonProps) {
       type="button"
       className="icon-button"
       data-state={state}
-      disabled={disabled}
-      aria-label={state === 'idle' ? `Copy ${props.label}` : `${props.label}: ${CHIP_TEXT[state]}`}
+      aria-label={state === 'idle' ? `Copy ${label}` : `${label}: ${STATE_TEXT[state]}`}
       onClick={() => void copy()}
     >
-      <Icon size={ICON_SIZE} />
+      {icon}
     </button>
   );
 }

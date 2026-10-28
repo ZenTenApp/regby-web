@@ -140,17 +140,6 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
 
   return (
     <div className="code-input">
-      <div className="code-input-actions">
-        <button
-          type="button"
-          className="icon-button"
-          disabled={disabled}
-          aria-label="Paste code"
-          onClick={() => void pasteButton()}
-        >
-          <Clipboard size={ICON_SIZE} />
-        </button>
-      </div>
       <div className="code-groups" data-invalid={invalid}>
         {GROUPS.map((group) => (
           <div key={group} className="code-group" style={barColor(group)}>
@@ -174,6 +163,15 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
           </div>
         ))}
       </div>
+      <button
+        type="button"
+        className="btn code-paste"
+        disabled={disabled}
+        onClick={() => void pasteButton()}
+      >
+        <Clipboard size={ICON_SIZE} />
+        Paste
+      </button>
       {pasteBlocked && <p className="field-hint">{CLIPBOARD_BLOCKED_TEXT}</p>}
     </div>
   );
