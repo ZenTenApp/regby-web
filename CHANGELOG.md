@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/ZenTenApp/regby-web/compare/v1.6.0...v1.6.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* keep actions above the mobile keyboard and toggles on one row ([9be52a2](https://github.com/ZenTenApp/regby-web/commit/9be52a2cb69443ecdd1a597082d55817e1e07525))
+
 # [1.6.0](https://github.com/ZenTenApp/regby-web/compare/v1.5.1...v1.6.0) (2026-10-28)
 
 
