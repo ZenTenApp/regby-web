@@ -54,7 +54,7 @@ export function LoginScreen({ role, onRole, onSigner, onSsh }: LoginScreenProps)
 
       <div className="stack stack-lg">
         <button type="button" className="btn" disabled={busy} onClick={() => onSigner(generatedSigner())}>
-          Demo KeyPair
+          Login with Demo KeyPair
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => void run()}>
           Login with Signer

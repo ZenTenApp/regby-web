@@ -66,9 +66,6 @@
   /* Between the login buttons (Figma 16). */
   --login-gap: 12px;
   --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 4px 16px rgb(16 24 40 / 6%);
-  /* The visible viewport, on-screen keyboard excluded. `trackVisibleViewport`
-     overrides it inline on <html>; this is the fallback without visualViewport. */
-  --viewport-height: 100dvh;
 
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
@@ -94,17 +91,28 @@ textarea {
   color: inherit;
 }
 
+/* A little air around what is scrolled to the edge over the keyboard. */
+:read-write {
+  scroll-margin-top: 12px;
+}
+
+/* `REVEAL_BLOCK` in lib/viewport.ts. */
+[data-keyboard-reveal] {
+  scroll-margin-bottom: 22px;
+}
+
 /* ---------- page + card ---------- */
 
 .page {
-  /* Exactly the visible viewport, so the card shrinks to fit rather than the page scrolling. */
-  height: var(--viewport-height);
+  /* Exactly the viewport, so the card shrinks to fit rather than the page scrolling.
+     The on-screen keyboard overlays it instead of shrinking it, see `revealFieldAboveKeyboard`. */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   /* Top-aligned, not centred: the Figma pins the card 80 of 1080 px from the top. */
-  padding: max(clamp(20px, var(--viewport-height) * 0.074, 60px), env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  padding: max(clamp(20px, 7.4dvh, 60px), env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
 }
 
 /* One size for every screen, so the card never jumps between screens. On a

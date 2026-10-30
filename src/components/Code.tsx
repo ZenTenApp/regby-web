@@ -139,7 +139,7 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
   };
 
   return (
-    <div className="code-input">
+    <div className="code-input" data-keyboard-reveal="">
       <div className="code-groups" data-invalid={invalid}>
         {GROUPS.map((group) => (
           <div key={group} className="code-group" style={barColor(group)}>
