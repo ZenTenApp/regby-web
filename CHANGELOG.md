@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2](https://github.com/ZenTenApp/regby-web/compare/v1.6.1...v1.6.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* scroll fields above the mobile keyboard instead of shrinking the page ([07e8bbd](https://github.com/ZenTenApp/regby-web/commit/07e8bbd15f610c945bcc24c81e8e6e67eef51873))
+
 ## [1.6.1](https://github.com/ZenTenApp/regby-web/compare/v1.6.0...v1.6.1) (2026-10-30)
 
 
