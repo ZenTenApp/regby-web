@@ -60,6 +60,8 @@
   --radius: 12px;
   --radius-md: 9px;
   --radius-sm: 7px;
+  /* Text inset of a single-line field; hints under it line up with the text. */
+  --field-inset: 14px;
   /* Every size here is the Figma's (560 px card) times 0.75, for a 420 px card.
      Width of the button column: the Figma's 392 px. */
   --column: 294px;
@@ -310,7 +312,8 @@ textarea {
   /* Figma: 67 px down to the first login button. */
   margin: 0 auto 50px;
   padding: var(--pad);
-  border-radius: calc(var(--radius-sm) + var(--pad));
+  /* Design call: as soft as the buttons, sharper than concentric with the thumb. */
+  border-radius: var(--radius-md);
   background: var(--toggle-track);
 }
 
@@ -549,7 +552,7 @@ textarea {
 .input {
   width: 100%;
   min-height: 40px;
-  padding: 0 14px;
+  padding: 0 var(--field-inset);
   border: 2px solid var(--border-strong);
   border-radius: var(--radius-md);
   outline: none;
@@ -719,6 +722,20 @@ textarea {
   font-size: var(--text-xs);
 }
 
+/* A warning under a field (Figma: Card Label), inset to the field's text. */
+.field-hint[data-tone='danger'] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--field-inset);
+  color: var(--danger);
+  font-size: var(--text-2xs);
+}
+
+.field-hint[data-tone='danger'] svg {
+  flex-shrink: 0;
+}
+
 /* A wrapper (such as a form) that passes the card's column layout through,
    so a `.spacer` inside it still takes the spare height. */
 .card-fill {
@@ -735,10 +752,6 @@ textarea {
 .spacer {
   /* Takes the card's spare height, so primary actions sit at its foot. */
   flex: 1 0 8px;
-}
-
-.field-gap {
-  margin-top: 14px;
 }
 
 /* ---------- feedback ---------- */

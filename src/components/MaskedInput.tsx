@@ -1,7 +1,7 @@
 /**
  * Masked text field with an eye button that unmasks it. Ported from chat's
  * `MaskedInput`, for values worth checking for a typo before submit, like the
- * SSH passphrase and the subaccount name.
+ * SSH passphrase and the Card Label (subaccount).
  *
  * The masking is CSS over a plain text field so browsers never offer to save
  * it. That rests on `-webkit-text-security`; where it is missing the field

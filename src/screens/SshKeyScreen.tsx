@@ -1,15 +1,17 @@
 /**
- * Log in with an encrypted OpenSSH Ed25519 key, in two steps: the key, then
- * its passphrase. Same derivation as chat and usdt-pay, so the same key is the
- * same npub everywhere. The subaccount name is required and opens the
- * identity `meltify -s <name>` derives from the key, as in chat.
+ * Log in with an encrypted OpenSSH Ed25519 key, in three steps: the key, its
+ * passphrase, then the subaccount, shown as the Card Label. Same derivation as
+ * chat and usdt-pay, so the same key is the same npub everywhere. The
+ * subaccount is required and opens the identity `meltify -s <name>` derives
+ * from the key, as in chat.
  *
  * The PEM, passphrase and subaccount live only in the DOM nodes and are read
  * at submit time; React state holds just whether each required field is
- * filled. Both steps stay mounted (the inactive one `hidden`) so the key
- * survives moving to the passphrase and back.
+ * filled. Every step stays mounted (the inactive ones `hidden`) so the values
+ * survive moving between steps.
  */
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Info } from 'lucide-react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from 'react';
 
 import FileAttachmentIcon from '@/assets/icons/file-attachment.svg?react';
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
@@ -38,7 +40,9 @@ function formatEstimate(seconds: number): string {
   return seconds >= 60 ? `~${Math.ceil(seconds / 60)} min` : `~${Math.round(seconds)}s`;
 }
 
-type Step = 'key' | 'passphrase';
+/** In order: Back walks this list backwards. */
+const STEPS = ['key', 'passphrase', 'subaccount'] as const;
+type Step = (typeof STEPS)[number];
 
 interface SshKeyScreenProps {
   role: Role;
@@ -79,7 +83,12 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   useEffect(() => {
     if (!focusStep.current) return;
     focusStep.current = false;
-    (step === 'key' ? pemRef : passRef).current?.focus();
+    const stepField: Record<Step, RefObject<HTMLElement | null>> = {
+      key: pemRef,
+      passphrase: passRef,
+      subaccount: subaccountRef,
+    };
+    stepField[step].current?.focus();
   }, [step]);
 
   const goTo = (next: Step) => {
@@ -132,16 +141,21 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   };
 
   const back = () => {
-    if (step === 'key') {
-      onBack();
-      return;
-    }
-    goTo('key');
+    const previous = STEPS[STEPS.indexOf(step) - 1];
+    if (previous) goTo(previous);
+    else onBack();
   };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (step !== 'passphrase') return;
+    // Enter or Continue on the passphrase step only moves on; the key is unlocked on the last step.
+    if (step === 'passphrase') {
+      if (hasPass) goTo('subaccount');
+      return;
+    }
+    // Checked here, not only via `disabled`: Enter submits through the form's first
+    // submit button, the hidden passphrase one, so the button state is bypassed.
+    if (step !== 'subaccount' || !hasSubaccount || busy) return;
     const pem = pemRef.current?.value ?? '';
     const passphrase = passRef.current?.value ?? '';
     // Not trimmed: meltify hashes the name byte for byte, and a trimmed one
@@ -167,7 +181,10 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
       clearFields(pemRef.current, passRef.current, subaccountRef.current);
       onSigner(signer);
     } catch (err) {
-      setError(KEY_ERROR_TEXT[keyErrorCode(err)]);
+      const code = keyErrorCode(err);
+      // The passphrase is only tried here, so send the user back to the step that fixes it.
+      if (code === 'wrong-passphrase') goTo('passphrase');
+      setError(KEY_ERROR_TEXT[code]);
       setBusy(false);
       setEstimate(null);
     }
@@ -226,33 +243,42 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
             ref={passRef}
             placeholder="Enter Passphrase..."
             autoComplete="off"
-            disabled={busy}
             onChange={(event) => {
               setHasPass(event.target.value !== '');
               setError(null);
             }}
           />
-
-          <div className="field-gap">
-            <label htmlFor="subaccount" className="visually-hidden">
-              Subaccount
-            </label>
-            <MaskedInput
-              id="subaccount"
-              ref={subaccountRef}
-              placeholder="Subaccount"
-              autoComplete="off"
-              disabled={busy}
-              onChange={(event) => {
-                setHasSubaccount(event.target.value !== '');
-                setError(null);
-              }}
-            />
-          </div>
-
           <div className="spacer" />
           <div className="stack">
-            <button type="submit" className="btn" disabled={busy || !hasPass || !hasSubaccount}>
+            <button type="submit" className="btn" disabled={!hasPass}>
+              Continue to Cards
+            </button>
+          </div>
+        </div>
+
+        <div className="card-fill" hidden={step !== 'subaccount'}>
+          <ScreenTitle title="Enter Card Label" subtitle="Card Labels are Case Sensitive" centered />
+          <label htmlFor="subaccount" className="visually-hidden">
+            Card Label
+          </label>
+          <MaskedInput
+            id="subaccount"
+            ref={subaccountRef}
+            placeholder="Card Label..."
+            autoComplete="off"
+            disabled={busy}
+            onChange={(event) => {
+              setHasSubaccount(event.target.value !== '');
+              setError(null);
+            }}
+          />
+          <p className="field-hint" data-tone="danger">
+            <Info size={ICON_SIZE} />
+            Card Label is Case Sensitive. A new input will create a new Card.
+          </p>
+          <div className="spacer" />
+          <div className="stack">
+            <button type="submit" className="btn" disabled={busy || !hasSubaccount}>
               {busy && <Spinner />}
               {busy ? 'Unlocking…' : 'Continue'}
             </button>
