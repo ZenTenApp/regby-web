@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.7.0](https://github.com/ZenTenApp/regby-web/compare/v1.6.2...v1.7.0) (2026-11-03)
+
+
+### Features
+
+* move the subaccount to its own Card Label step ([0ca5970](https://github.com/ZenTenApp/regby-web/commit/0ca5970f4591507e76daa6004073dd3716070496))
+
 ## [1.6.2](https://github.com/ZenTenApp/regby-web/compare/v1.6.1...v1.6.2) (2026-10-30)
 
 
