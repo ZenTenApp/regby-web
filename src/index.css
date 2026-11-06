@@ -252,23 +252,11 @@ textarea {
   margin: 9px 0 19px;
 }
 
-/* Fixed box so switching variants (different aspect ratios) never shifts the
-   layout; each wordmark is fitted inside it. */
+/* Fixed box keeps the layout from shifting while the svg loads. */
 .brand-logo {
   margin: 0;
   width: min(206px, 100%);
   height: 46px;
-}
-
-.brand-logo button {
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .brand-logo img {
