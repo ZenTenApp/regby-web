@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.8.0](https://github.com/ZenTenApp/regby-web/compare/v1.7.0...v1.8.0) (2026-11-06)
+
+
+### Features
+
+* show a single ReGBY wordmark and the new favicon ([152cfab](https://github.com/ZenTenApp/regby-web/commit/152cfab3d32146372f241b8cb2c6cec3ce44c14d))
+
 # [1.7.0](https://github.com/ZenTenApp/regby-web/compare/v1.6.2...v1.7.0) (2026-11-03)
 
 
