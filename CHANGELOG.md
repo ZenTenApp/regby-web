@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.9.0](https://github.com/ZenTenApp/regby-web/compare/v1.8.0...v1.9.0) (2026-11-10)
+
+
+### Features
+
+* load the SSH key by Paste or Upload and clear the clipboard ([1fd3666](https://github.com/ZenTenApp/regby-web/commit/1fd3666796ad061da316a420bdb00cf24b06c540))
+
 # [1.8.0](https://github.com/ZenTenApp/regby-web/compare/v1.7.0...v1.8.0) (2026-11-06)
 
 
