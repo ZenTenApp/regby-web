@@ -9,3 +9,14 @@ export async function readClipboard(): Promise<string | null> {
     return null;
   }
 }
+
+/** Overwrites the clipboard so a pasted secret is not left for the next paste
+ *  or another page's read; false when the browser refuses the write. */
+export async function clearClipboard(): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText('');
+    return true;
+  } catch {
+    return false;
+  }
+}

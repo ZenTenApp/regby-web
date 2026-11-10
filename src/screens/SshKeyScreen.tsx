@@ -5,10 +5,11 @@
  * subaccount is required and opens the identity `meltify -s <name>` derives
  * from the key, as in chat.
  *
- * The PEM, passphrase and subaccount live only in the DOM nodes and are read
- * at submit time; React state holds just whether each required field is
- * filled. Every step stays mounted (the inactive ones `hidden`) so the values
- * survive moving between steps.
+ * The key is never shown: Paste reads it from the clipboard (then clears the
+ * clipboard) and Upload from a file, into a ref. The passphrase and subaccount
+ * live only in their DOM nodes. All three are read at submit time; React state
+ * holds just whether the passphrase and subaccount are filled. Every step stays
+ * mounted (the inactive ones `hidden`) so the typed values survive moving between steps.
  */
 import { Info } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from 'react';
@@ -19,7 +20,7 @@ import { MaskedInput } from '@/components/MaskedInput';
 import { Spinner } from '@/components/Spinner';
 import { ICON_SIZE } from '@/components/icon';
 import type { Role } from '@/components/roles';
-import { CLIPBOARD_BLOCKED_TEXT, readClipboard } from '@/lib/clipboard';
+import { clearClipboard, readClipboard } from '@/lib/clipboard';
 import { KEY_ERROR_TEXT, keyErrorCode } from '@/lib/errors';
 import type { Signer } from '@/services/keys/signer';
 import {
@@ -36,6 +37,12 @@ const KEY_FILE_MAX_BYTES = 64 * 1024;
 /** Below this the estimate is noise; the spinner alone reads as responsive. */
 const ESTIMATE_FLOOR_SECONDS = 3;
 
+/** With no key field to paste into, the file is the only other way in. */
+const PASTE_BLOCKED_TEXT = 'Clipboard access was blocked. Upload the key file instead.';
+
+/** The key stays readable by the next paste, so the user has to overwrite it. */
+const CLIPBOARD_NOT_CLEARED_TEXT = 'Could not clear the clipboard. Copy something else over your key.';
+
 function formatEstimate(seconds: number): string {
   return seconds >= 60 ? `~${Math.ceil(seconds / 60)} min` : `~${Math.round(seconds)}s`;
 }
@@ -50,17 +57,19 @@ interface SshKeyScreenProps {
   onSigner: (signer: Signer) => void;
 }
 
-function clearFields(...fields: (HTMLInputElement | HTMLTextAreaElement | null)[]): void {
+/** Forgets the key and empties the secret fields, on success and on the way
+ *  out; the strings themselves cannot be wiped. */
+function dropSecrets(pem: RefObject<string>, ...fields: (HTMLInputElement | null)[]): void {
+  pem.current = '';
   for (const field of fields) if (field) field.value = '';
 }
 
 export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
-  const pemRef = useRef<HTMLTextAreaElement>(null);
+  const pemRef = useRef('');
   const passRef = useRef<HTMLInputElement>(null);
   const subaccountRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>('key');
-  const [hasPem, setHasPem] = useState(false);
   const [hasPass, setHasPass] = useState(false);
   const [hasSubaccount, setHasSubaccount] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -69,11 +78,11 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
 
   useEffect(() => {
     prepareSshLogin();
-    const fields = [pemRef.current, passRef.current, subaccountRef.current];
-    // Clear the secrets on the way out; the strings themselves cannot be wiped.
+    // Captured now: the refs are detached by the time the cleanup runs.
+    const fields = [passRef.current, subaccountRef.current];
     return () => {
       cancelSshLogin();
-      clearFields(...fields);
+      dropSecrets(pemRef, ...fields);
     };
   }, []);
 
@@ -83,12 +92,12 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   useEffect(() => {
     if (!focusStep.current) return;
     focusStep.current = false;
-    const stepField: Record<Step, RefObject<HTMLElement | null>> = {
-      key: pemRef,
+    // The key step has no field; its Paste button is the first thing to reach.
+    const stepField: Partial<Record<Step, RefObject<HTMLElement | null>>> = {
       passphrase: passRef,
       subaccount: subaccountRef,
     };
-    stepField[step].current?.focus();
+    stepField[step]?.current?.focus();
   }, [step]);
 
   const goTo = (next: Step) => {
@@ -97,35 +106,31 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     setStep(next);
   };
 
-  const setPem = (value: string) => {
-    if (pemRef.current) pemRef.current.value = value;
-    setHasPem(value.trim() !== '');
-    setError(null);
-  };
-
   /** Checks the key's shape before asking for its passphrase, so a wrong
-   *  paste or file fails on the step that can fix it. */
-  const advance = (pem: string) => {
+   *  paste or file fails on the step that can fix it. Returns whether it moved on. */
+  const loadPem = (pem: string): boolean => {
     try {
       inspectSshKey(pem);
     } catch (err) {
       setError(KEY_ERROR_TEXT[keyErrorCode(err)]);
-      return;
+      return false;
     }
+    pemRef.current = pem;
     goTo('passphrase');
-  };
-
-  /** A whole key arriving at once (Paste or file) needs no Continue tap;
-   *  typing in the key field does. */
-  const loadPem = (value: string) => {
-    setPem(value);
-    if (value.trim() !== '') advance(value);
+    return true;
   };
 
   const pasteKey = async () => {
     const pasted = await readClipboard();
-    if (pasted === null) setError(CLIPBOARD_BLOCKED_TEXT);
-    else loadPem(pasted);
+    if (pasted === null) {
+      setError(PASTE_BLOCKED_TEXT);
+      return;
+    }
+    // Left in place, the key would go out with the next paste anywhere else.
+    // Cleared even when it fails the check below: it was offered as the key.
+    const cleared = await clearClipboard();
+    // Set after loadPem's goTo, which clears the error, so it shows on the passphrase step.
+    if (loadPem(pasted) && !cleared) setError(CLIPBOARD_NOT_CLEARED_TEXT);
   };
 
   const loadFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +161,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     // Checked here, not only via `disabled`: Enter submits through the form's first
     // submit button, the hidden passphrase one, so the button state is bypassed.
     if (step !== 'subaccount' || !hasSubaccount || busy) return;
-    const pem = pemRef.current?.value ?? '';
+    const pem = pemRef.current;
     const passphrase = passRef.current?.value ?? '';
     // Not trimmed: meltify hashes the name byte for byte, and a trimmed one
     // would quietly open a different identity than `meltify -s` prints.
@@ -178,7 +183,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     );
     try {
       const signer = await loginWithSsh(pem, passphrase, subaccount);
-      clearFields(pemRef.current, passRef.current, subaccountRef.current);
+      dropSecrets(pemRef, passRef.current, subaccountRef.current);
       onSigner(signer);
     } catch (err) {
       const code = keyErrorCode(err);
@@ -197,39 +202,17 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
       <form className="card-fill" onSubmit={(event) => void submit(event)}>
         <div className="card-fill" hidden={step !== 'key'}>
           <ScreenTitle title="Input SSH Key" subtitle="Paste your Ed25519 Private Key" centered />
-          <div className="field ssh-key-field">
-            <label htmlFor="pem" className="visually-hidden">
-              SSH private key
-            </label>
-            <textarea
-              id="pem"
-              ref={pemRef}
-              placeholder="Enter your SSH Key..."
-              spellCheck={false}
-              autoCapitalize="off"
-              autoCorrect="off"
-              onChange={(event) => setPem(event.target.value)}
-            />
-            <div className="field-actions">
-              <button type="button" className="chip" onClick={() => fileRef.current?.click()}>
-                <FileAttachmentIcon width={ICON_SIZE} height={ICON_SIZE} />
-                Upload
-              </button>
-            </div>
-            {/* Key files usually have no extension, so no `accept` filter. */}
-            <input ref={fileRef} type="file" hidden onChange={loadFile} />
-          </div>
+          {/* Key files usually have no extension, so no `accept` filter. */}
+          <input ref={fileRef} type="file" hidden onChange={loadFile} />
           <div className="spacer" />
           <div className="stack">
-            {hasPem ? (
-              <button type="button" className="btn" onClick={() => advance(pemRef.current?.value ?? '')}>
-                Continue
-              </button>
-            ) : (
-              <button type="button" className="btn" onClick={() => void pasteKey()}>
-                Paste SSH Key
-              </button>
-            )}
+            <button type="button" className="btn btn-sm" onClick={() => void pasteKey()}>
+              Paste SSH Key
+            </button>
+            <button type="button" className="text-button text-button-lg" onClick={() => fileRef.current?.click()}>
+              <FileAttachmentIcon width={ICON_SIZE} height={ICON_SIZE} />
+              Upload File
+            </button>
           </div>
         </div>
 

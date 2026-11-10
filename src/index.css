@@ -396,6 +396,13 @@ textarea {
   gap: var(--login-gap);
 }
 
+/* A main button sharing the stack with a secondary action (SSH key:
+   Paste over Upload), a step down so the pair reads as one group. */
+.btn-sm {
+  min-height: 44px;
+  font-size: var(--text-md);
+}
+
 /* Frameless actions: a bare icon (copy, regenerate) or an icon with a label
    (Copy content). Copy feedback colours both the same way. */
 .icon-button,
@@ -439,6 +446,15 @@ textarea {
 
 .text-button svg {
   color: var(--accent);
+}
+
+/* A text action standing on its own rather than beside the content it acts
+   on, centred at its own width when it sits in a stack. */
+.text-button-lg {
+  align-self: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: var(--text-md);
 }
 
 .icon-button[data-state='copied'],
@@ -501,7 +517,7 @@ textarea {
 .field textarea {
   display: block;
   width: 100%;
-  min-height: clamp(56px, 100cqh - var(--textarea-room), var(--textarea-max, 172px));
+  min-height: clamp(56px, 100cqh - var(--textarea-room), 172px);
   padding: 14px 16px 4px;
   border: 0;
   outline: none;
@@ -516,25 +532,6 @@ textarea {
 .input::placeholder {
   color: var(--faint);
   font-size: var(--text-sm);
-}
-
-/* The SSH key box, Upload row included, is the Figma's 252 px. */
-.ssh-key-field {
-  --textarea-max: 135px;
-}
-
-/* A fixed box like the Figma's; a pasted key scrolls inside it. */
-.ssh-key-field textarea {
-  resize: none;
-}
-
-/* A row under the text rather than floating over it, so long input never
-   scrolls beneath the buttons. */
-.field-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 0 16px 16px;
 }
 
 .input {
