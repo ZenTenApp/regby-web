@@ -1,7 +1,8 @@
 /**
  * ReGBY wire vocabulary, app side. Mirrors regby-middleware `src/protocol.ts`
  * (see its docs/protocol.md). The reply intent decides the outcome, never the
- * content: a success may carry empty content, a failure always does.
+ * content: a success may carry empty content, and a failure carries none (a
+ * conflict: the broker's fixed warning, which the app never shows).
  */
 import {
   HEX_PUBKEY_RE,
@@ -19,8 +20,21 @@ export const REPLY_INTENT = {
   request_regby_content: 'regby_content',
 } as const satisfies Record<RequestIntent, string>;
 
-/** Unsolicited notice to the merchant once its code is redeemed. */
+/**
+ * Unsolicited notice to the merchant that its code was redeemed, naming the
+ * customer who got the text (`to`). Its content is the text the broker
+ * delivered. Sent once per code.
+ */
 export const DELIVERED_INTENT = 'regby_content_delivered';
+
+/**
+ * Someone else already redeemed the code, inside its minute. The broker sends
+ * it both ways: to the refused customer in place of `regby_content`, and to the
+ * merchant once per refused customer (`to` = them). Its content is a fixed
+ * warning, never the text. A security signal on both sides: whoever was first
+ * may have read the code off the merchant's screen, so the app warns loudly.
+ */
+export const CONFLICT_INTENT = 'regby_conflict';
 
 /** Failure replies per request. An intent missing here never matches and the
  *  user waits out the timeout, so keep it in step with the broker. */
@@ -29,7 +43,7 @@ export const FAILURE_INTENTS = {
   request_regby_content: [
     'regby_code_not_found',
     'regby_code_expired',
-    'regby_code_already_redeemed',
+    CONFLICT_INTENT,
     'regby_code_locked',
   ],
 } as const satisfies Record<RequestIntent, readonly string[]>;
@@ -52,7 +66,7 @@ export const REGBY_ERROR_TEXT: Record<RegbyErrorReason, string> = {
   regby_code_busy: 'ReGBY is busy right now. Try again in a moment.',
   regby_code_not_found: 'Invalid ReGBY Code. Please input the correct code.',
   regby_code_expired: 'This ReGBY Code has expired. Ask for a new one.',
-  regby_code_already_redeemed: 'This ReGBY Code was already used.',
+  regby_conflict: 'Request and enter the new code.',
   regby_code_locked: 'This ReGBY Code is no longer valid. Ask for a new one.',
   'too-long': 'This text is too long for ReGBY. Shorten it and try again.',
   binary: 'This text contains characters ReGBY cannot carry.',
@@ -105,8 +119,9 @@ export function assertMintable(content: string): void {
   if (BINARY_RE.test(content)) throw new RegbyError('binary');
 }
 
-/** Plaintext tag naming the code on every event about one; the broker sets it
- *  on its replies, and the app on the customer's redeem request. */
+/** Plaintext tag carrying the code, the only place it travels: the broker sets
+ *  it on its replies (the merchant reads the minted code from it), and the app
+ *  on the customer's redeem request, whose content is empty. */
 export const CODE_TAG = 'regby_code';
 
 export function readTag(tags: readonly string[][], name: string): string | undefined {
@@ -146,6 +161,37 @@ export function codeExpiresAt(requestCreatedAt: number, brokerNow: number, recei
  *  merchant's QR and the customer's view agree on what "empty" means. */
 export function isBlankContent(content: string): boolean {
   return content.trim() === '';
+}
+
+/** Whether a notice's echoed text is the text the merchant sent. `unreadable`
+ *  when it would not decrypt, so a refused decrypt is not read as tampering. */
+export type TextCheck = 'same' | 'different' | 'unreadable';
+
+/**
+ * One customer the broker reported for a minted code: the one who got the text
+ * (`DELIVERED_INTENT`, `redeemed`), whose echoed text is checked, or one refused
+ * after it (`CONFLICT_INTENT`), whose content is only the broker's warning.
+ */
+export type CodeNotice = {
+  /** Hex pubkey of the customer who sent the code. */
+  customer: string;
+  /** The notice's `created_at`; the broker stamps a code's notices in the
+   *  order their customers arrived. */
+  at: number;
+} & ({ redeemed: true; textCheck: TextCheck } | { redeemed: false });
+
+/** Receives a code's whole notice list, in `addCodeNotice` order, on each change. */
+export type CodeNoticeListener = (notices: readonly CodeNotice[]) => void;
+
+/**
+ * Fold a notice into a code's list: one entry per customer, the customer who
+ * got the text first, then the refused ones in arrival order. Notices land in
+ * any order (the winner's is published after its own reply), and a relay may
+ * repeat one. Returns the same list when the customer is already in it.
+ */
+export function addCodeNotice(notices: readonly CodeNotice[], notice: CodeNotice): readonly CodeNotice[] {
+  if (notices.some((known) => known.customer === notice.customer)) return notices;
+  return [...notices, notice].sort((a, b) => Number(b.redeemed) - Number(a.redeemed) || a.at - b.at);
 }
 
 /** A pairing tag's pubkey, or null when absent or not hex. */

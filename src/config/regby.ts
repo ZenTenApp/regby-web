@@ -50,8 +50,9 @@ export const REGBY_MAX_WIRE_BYTES = 4 * 1024;
 /** How long to wait for the broker to answer a request. */
 export const REGBY_REQUEST_TIMEOUT_MS = 20_000;
 
-/** Keep listening for `regby_content_delivered` this long past expiry, so a
- *  redeem in the code's last second still reaches the merchant screen. */
-export const REGBY_DELIVERED_GRACE_MS = 30_000;
+/** Keep listening for the merchant's notices (`regby_content_delivered`,
+ *  `regby_conflict`) this long past expiry, so a redeem in the code's last
+ *  second still reaches the merchant screen. */
+export const REGBY_NOTICE_GRACE_MS = 30_000;
 
 export const RELAY_CONNECT_TIMEOUT_MS = 6_000;

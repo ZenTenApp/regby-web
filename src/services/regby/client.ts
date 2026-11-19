@@ -10,11 +10,11 @@ import { SimplePool } from 'nostr-tools/pool';
 
 import {
   CLIENT_NAME,
-  REGBY_DELIVERED_GRACE_MS,
   REGBY_EVENT_EXPIRY_SECONDS,
   REGBY_KIND,
   REGBY_MAX_WIRE_BYTES,
   REGBY_MIDDLEMAN_PUBKEY,
+  REGBY_NOTICE_GRACE_MS,
   REGBY_RELAYS,
   REGBY_REQUEST_TIMEOUT_MS,
   RELAY_CONNECT_TIMEOUT_MS,
@@ -25,10 +25,12 @@ import type { Signer } from '@/services/keys/signer';
 
 import {
   CODE_TAG,
+  CONFLICT_INTENT,
   DELIVERED_INTENT,
   FAILURE_INTENTS,
   REPLY_INTENT,
   RegbyError,
+  addCodeNotice,
   assertCodeTag,
   assertMintable,
   codeExpiresAt,
@@ -36,8 +38,11 @@ import {
   normalizeRegbyCode,
   readPubkeyTag,
   readTag,
+  type CodeNotice,
+  type CodeNoticeListener,
   type FailureIntent,
   type RequestIntent,
+  type TextCheck,
 } from './protocol';
 
 /** A code the broker minted, and when it stops working. */
@@ -45,10 +50,13 @@ export interface MintedCode {
   code: string;
   /** Local epoch ms, mapped from the broker clock that decides expiry. */
   expiresAt: number;
-  /** Resolves with the customer's hex pubkey once the code is redeemed while
-   *  still listened for; never settles otherwise. */
-  delivered: Promise<string>;
-  /** Stop listening for the redeemed notice. */
+  /**
+   * Call `listener` with every customer the broker has reported for this code,
+   * the one who got the text first: now, and again on each new one while still
+   * listened for. Returns the unsubscribe.
+   */
+  watchCustomers: (listener: CodeNoticeListener) => () => void;
+  /** Stop listening for notices. */
   stop: () => void;
 }
 
@@ -129,27 +137,40 @@ export class RegbyClient {
   /** Mint a code for `content`. */
   async mint(content: string): Promise<MintedCode> {
     assertMintable(content);
-    const delivered = deferred<string>();
+    let notices: readonly CodeNotice[] = [];
+    const listeners = new Set<CodeNoticeListener>();
     const request = await this.#send('request_regby_code', content, {
       onNotice: (event) => {
-        if (readTag(event.tags, 'i') !== DELIVERED_INTENT) return;
-        const customer = readPubkeyTag(event.tags, 'to');
-        if (customer) delivered.resolve(customer);
+        void this.#readNotice(event, content).then((notice) => {
+          if (notice === null) return;
+          const next = addCodeNotice(notices, notice);
+          if (next === notices) return;
+          notices = next;
+          for (const listener of listeners) listener(notices);
+        });
       },
     });
 
     try {
       const reply = await request.reply;
-      if (!isRegbyCode(reply.content)) throw new RegbyError('malformed');
-      assertCodeTag(reply.tags, reply.content);
+      // The code travels only in its tag; the content is our own text echoed.
+      const code = readTag(reply.tags, CODE_TAG);
+      if (code === undefined || !isRegbyCode(code)) throw new RegbyError('malformed');
       const expiresAt = codeExpiresAt(request.createdAt, reply.createdAt, reply.receivedAt);
-      // Keep the subscription for the delivered notice, then let it go.
-      const timer = setTimeout(request.close, expiresAt - Date.now() + REGBY_DELIVERED_GRACE_MS);
+      // Keep the subscription for the notices, then let it go.
+      const timer = setTimeout(request.close, expiresAt - Date.now() + REGBY_NOTICE_GRACE_MS);
       const stop = () => {
         clearTimeout(timer);
         request.close();
       };
-      return { code: reply.content, expiresAt, delivered: delivered.promise, stop };
+      const watchCustomers = (listener: CodeNoticeListener) => {
+        listeners.add(listener);
+        listener(notices);
+        return () => {
+          listeners.delete(listener);
+        };
+      };
+      return { code, expiresAt, watchCustomers, stop };
     } catch (err) {
       request.close();
       throw err;
@@ -160,7 +181,8 @@ export class RegbyClient {
   async redeem(input: string): Promise<RedeemedContent> {
     const code = normalizeRegbyCode(input);
     if (code === null) throw new RegbyError('regby_code_not_found');
-    const request = await this.#send('request_regby_content', code, { tags: [[CODE_TAG, code]] });
+    // The broker reads the code from the tag alone; the content stays empty.
+    const request = await this.#send('request_regby_content', '', { tags: [[CODE_TAG, code]] });
     try {
       const reply = await request.reply;
       assertCodeTag(reply.tags, code);
@@ -265,6 +287,26 @@ export class RegbyClient {
     }
 
     return { reply, createdAt, close };
+  }
+
+  /**
+   * A delivered or conflict notice as the merchant sees it, or null when it is
+   * neither or names no customer. A delivered notice's content is the text the
+   * broker says it delivered, checked against the text this merchant sent: a
+   * broker serving the customer something else shows up here.
+   */
+  async #readNotice(event: NostrEvent, sentText: string): Promise<CodeNotice | null> {
+    const intent = readTag(event.tags, 'i');
+    if (intent !== DELIVERED_INTENT && intent !== CONFLICT_INTENT) return null;
+    const customer = readPubkeyTag(event.tags, 'to');
+    if (customer === null) return null;
+    // A conflict carries the broker's fixed warning, not our text: nothing to check.
+    if (intent === CONFLICT_INTENT) return { customer, redeemed: false, at: event.created_at };
+    const textCheck = await this.#open(event.content).then(
+      (text): TextCheck => (text === sentText ? 'same' : 'different'),
+      (): TextCheck => 'unreadable',
+    );
+    return { customer, redeemed: true, at: event.created_at, textCheck };
   }
 
   /** Plaintext of a broker reply; `""` travels unencrypted. */

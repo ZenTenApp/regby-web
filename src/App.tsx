@@ -109,7 +109,7 @@ export function App() {
           content={screen.content}
           showQr={showQr}
           onRegenerate={() => {
-            // The old code is expired; stop listening for it before re-minting.
+            // The old code is expired or in conflict; stop listening for it before re-minting.
             screen.minted.stop();
             return mint(screen.content);
           }}

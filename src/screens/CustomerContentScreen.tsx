@@ -1,12 +1,16 @@
 /**
  * Customer step 2: the merchant's text, shown exactly as written (line breaks
  * and spacing kept) and as plain text only, since it came through an
- * untrusted broker. Copy hands over the original verbatim.
+ * untrusted broker. Copy hands over the original verbatim. Clear, like Back,
+ * returns to the empty code for the next redeem.
  */
+import { X } from 'lucide-react';
+
 import { CodeDisplay } from '@/components/Code';
 import { ContentPanel } from '@/components/ContentPanel';
 import { CopyButton } from '@/components/CopyButton';
 import { Page, ScreenHeader } from '@/components/Layout';
+import { ICON_SIZE } from '@/components/icon';
 import { npub, shortNpub } from '@/lib/npub';
 import { displayableContent, isBlankContent } from '@/services/regby/protocol';
 
@@ -48,6 +52,10 @@ export function CustomerContentScreen({ content, code, from, onBack }: CustomerC
       {/* Same place as the redeem screen's code, so the boxes stay put across the redeem. */}
       <div className="code-after-content">
         <CodeDisplay code={code} />
+        <button type="button" className="btn code-action" onClick={onBack}>
+          <X size={ICON_SIZE} />
+          Clear
+        </button>
       </div>
     </Page>
   );

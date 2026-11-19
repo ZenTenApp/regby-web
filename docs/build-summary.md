@@ -38,13 +38,16 @@ project root and this spec:
 | Secrets | PEM and passphrase live in DOM refs, never React state | Ported discipline from chat |
 | Session | In memory only; reload signs out | Simplest and safest |
 | Relays | `dm1.zentext.me`, `dm2.nostr.box`, `dm3.npub.cx`, AUTH before every request | These relays return an empty EOSE to an unauthenticated REQ |
-| Requests | kind 4, NIP-04, tags `p`, `i`, `expiration` (72 h less 60 s), `client=regby-web`; `regby_code` on the redeem request | Broker and relay requirements |
-| Replies | Subscribe on `#e` before publishing; author pinned to the broker; intent decides, never content; `""` never decrypted; `regby_code` tag must match the code when present | Protocol rules |
+| Requests | kind 4, NIP-04, tags `p`, `i`, `expiration` (72 h less 60 s), `client=regby-web`; the redeem request has content `""` and the code only in its `regby_code` tag | Broker and relay requirements |
+| Replies | Subscribe on `#e` before publishing; author pinned to the broker; intent decides, never content; `""` never decrypted; the minted code is read from the `regby_code` tag (the reply's content is the merchant's own text echoed); on other replies the tag must match the code when present | Protocol rules |
 | Failure text | App's own text per failure intent | Broker sends no text by design |
 | Mint pre-checks | Over 4096 chars, broker's binary class, encrypted size over 4 KB. Empty is valid and sent as a raw `""` | Broker or relay would silently drop these |
 | QR payload | The content itself; the code is typed only | Changed after v1.0.0 at the user's request. Text over QR capacity (~2.9 KB) shows a fallback pointing to the code |
 | Display of redeemed text | Plain text, `white-space: pre-wrap`, hidden and bidi characters stripped for display only; Copy keeps the original | Broker is untrusted |
-| Merchant code screen | Countdown from the request `created_at`, "Redeemed by npub…" on `regby_content_delivered`, "Generate new code" after expiry | Broker anchors expiry to `created_at` |
+| Merchant code screen | Countdown from the request `created_at`. `regby_content_delivered` shows as "Redeemed by npub…". Expiry and a `regby_conflict` (a customer refused after the winner) both void the code: the boxes empty, and Generate (a new code for the same text) sits under them, in the same 247x49 slot as Paste and Clear. The status line reads "Code expired. Generate a new code." or, on a conflict, "Warning: Please confirm with customer." in the warning colour (Figma `figma/Merchant conflict and redesign.svg`). A delivered notice whose text differs from what was shared shows a boxed "Text mismatch" alert | Broker anchors expiry to `created_at`; whoever typed the code first may be an onlooker, and nothing on screen can tell which pubkey is the customer at the counter |
+| Customer redeem screen | A failed redeem marks the empty text frame: "ERROR" in the sender strip, the reason in the copy strip (after a `regby_conflict`, "Request and enter the new code."), boxes cleared for the next code (Figma `figma/conflict.svg`). Back clears the error first; only Back from the empty frame signs out | A refused customer retries with a new code and must not lose a throwaway key to a stray Back |
+| Customer content screen | Clear under the code, in Paste's slot, returns to the empty redeem screen, as Back does | Figma `figma/conflict.svg` |
+| SSH key login | The subaccount step is labelled "Wallet Label" | |
 | Broker key | `VITE_REGBY_MIDDLEMAN_PUBKEY` in `.env`, production key by default | Validated as 64 hex at load |
 
 ## Verification

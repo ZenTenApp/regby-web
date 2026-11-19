@@ -24,6 +24,8 @@
   --panel: #f3f3f3;
   --danger: #d93a3a;
   --success: #2ca05e;
+  /* The merchant's code-conflict warning. */
+  --warning: #e8b62c;
 
   --merchant: #0f5a88;
   --customer: #0f8888;
@@ -467,20 +469,6 @@ textarea {
   color: var(--danger);
 }
 
-.link-button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.link-button:disabled {
-  color: var(--muted);
-  cursor: progress;
-}
-
 .chip {
   display: inline-flex;
   align-items: center;
@@ -707,7 +695,7 @@ textarea {
   font-size: var(--text-xs);
 }
 
-/* A warning under a field (Figma: Card Label), inset to the field's text. */
+/* A warning under a field (the Wallet Label's; Figma: Card Label), inset to the field's text. */
 .field-hint[data-tone='danger'] {
   display: flex;
   align-items: center;
@@ -767,6 +755,49 @@ textarea {
 
 .status[data-tone='success'] {
   color: var(--success);
+}
+
+/* Icon and lead word in colour, the instruction in the usual grey. */
+.status[data-tone='warning'] svg,
+.status[data-tone='warning'] strong {
+  color: var(--warning);
+}
+
+.status strong {
+  font-weight: 600;
+}
+
+/* A warning that must not be missed (`Alert`): boxed and titled, louder than
+   `.error`. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 15px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 8%, var(--card));
+  color: var(--danger);
+  font-size: var(--text-sm);
+  text-align: left;
+  white-space: normal;
+}
+
+.alert > svg {
+  flex-shrink: 0;
+  font-size: var(--text-lg);
+}
+
+.alert-title {
+  margin: 0 0 2px;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.alert-body {
+  margin: 0;
+  color: var(--text);
 }
 
 .spinner {
@@ -841,12 +872,14 @@ textarea {
   margin: 0 auto;
 }
 
-/* Figma: 247x49, 27 px under the colour bars. Below the code, so the boxes
-   sit where the content screen shows them. */
-.code-paste {
+/* The one action under the code: Paste, Clear, or the merchant's Generate.
+   Figma: 247x49, 32 px under the colour bars, the same on every screen so the
+   code never moves between them. */
+.code-action {
+  display: flex;
   width: 185px;
   min-height: 36px;
-  margin-top: clamp(12px, 4cqh, 20px);
+  margin: clamp(12px, 4.9cqh, 24px) auto 0;
   border-radius: var(--radius-sm);
 }
 
@@ -905,10 +938,6 @@ input.code-box {
 
 input.code-box:focus {
   border-color: var(--accent);
-}
-
-.code-groups[data-invalid='true'] .code-box {
-  border-color: var(--danger);
 }
 
 /* ---------- QR ---------- */
@@ -974,7 +1003,8 @@ img.qr {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  height: 27px;
+  /* Grows only for an error too long for one line, at the text's expense. */
+  min-height: 27px;
   background: var(--strip);
 }
 
@@ -1039,17 +1069,43 @@ img.qr {
   text-align: center;
 }
 
-/* Redeem progress and errors, centred where the text will appear. */
+/* A failed redeem: ERROR centred in the sender's strip, what to do in the copy strip. */
+.content-panel-head:has(> .content-panel-error) {
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.content-panel-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--danger);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.content-panel-error-text {
+  margin: 0;
+  padding: 4px 0;
+  color: var(--subtle);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* Redeem progress, centred where the text will appear. */
 .content-panel-status {
-  display: grid;
-  place-items: center;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
   white-space: normal;
 }
 
-.content-panel-status .status,
-.content-panel-status .error {
-  margin: 0;
+/* Auto margins centre with equal space above and below. */
+.content-panel-status .status {
+  margin: auto 0;
 }
 
 .visually-hidden {

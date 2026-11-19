@@ -1,6 +1,6 @@
 /**
  * Log in with an encrypted OpenSSH Ed25519 key, in three steps: the key, its
- * passphrase, then the subaccount, shown as the Card Label. Same derivation as
+ * passphrase, then the subaccount, shown as the Wallet Label. Same derivation as
  * chat and usdt-pay, so the same key is the same npub everywhere. The
  * subaccount is required and opens the identity `meltify -s <name>` derives
  * from the key, as in chat.
@@ -234,20 +234,20 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
           <div className="spacer" />
           <div className="stack">
             <button type="submit" className="btn" disabled={!hasPass}>
-              Continue to Cards
+              Continue to Wallets
             </button>
           </div>
         </div>
 
         <div className="card-fill" hidden={step !== 'subaccount'}>
-          <ScreenTitle title="Enter Card Label" subtitle="Card Labels are Case Sensitive" centered />
+          <ScreenTitle title="Enter Wallet Label" subtitle="Wallet Labels are Case Sensitive" centered />
           <label htmlFor="subaccount" className="visually-hidden">
-            Card Label
+            Wallet Label
           </label>
           <MaskedInput
             id="subaccount"
             ref={subaccountRef}
-            placeholder="Card Label..."
+            placeholder="Wallet Label..."
             autoComplete="off"
             disabled={busy}
             onChange={(event) => {
@@ -257,7 +257,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
           />
           <p className="field-hint" data-tone="danger">
             <Info size={ICON_SIZE} />
-            Card Label is Case Sensitive. A new input will create a new Card.
+            Wallet Label is Case Sensitive. A new input will create a new Wallet.
           </p>
           <div className="spacer" />
           <div className="stack">
