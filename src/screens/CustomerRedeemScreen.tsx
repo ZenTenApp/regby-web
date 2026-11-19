@@ -3,9 +3,9 @@
  * boxes below. A full eight typed digits redeems the code through the broker;
  * no submit button. The merchant's QR needs no in-app scanner: it carries the
  * text itself, which a phone's own camera reads. A failed redeem marks the
- * frame's strips: ERROR on top, what to do below (after a conflict, ask for a
- * new code). Back from there clears the error, like Back from the text; only
- * Back from the empty frame signs out.
+ * frame's strips: ERROR on top, what to do below (after someone else redeemed
+ * the code, ask for a new one). Back from there clears the error, like Back
+ * from the text; only Back from the empty frame signs out.
  */
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';

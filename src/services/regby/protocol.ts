@@ -1,8 +1,7 @@
 /**
  * ReGBY wire vocabulary, app side. Mirrors regby-middleware `src/protocol.ts`
  * (see its docs/protocol.md). The reply intent decides the outcome, never the
- * content: a success may carry empty content, and a failure carries none (a
- * conflict: the broker's fixed warning, which the app never shows).
+ * content: a success may carry empty content, and a failure carries none.
  */
 import {
   HEX_PUBKEY_RE,
@@ -28,11 +27,12 @@ export const REPLY_INTENT = {
 export const DELIVERED_INTENT = 'regby_content_delivered';
 
 /**
- * Someone else already redeemed the code, inside its minute. The broker sends
- * it both ways: to the refused customer in place of `regby_content`, and to the
- * merchant once per refused customer (`to` = them). Its content is a fixed
- * warning, never the text. A security signal on both sides: whoever was first
- * may have read the code off the merchant's screen, so the app warns loudly.
+ * Someone else already redeemed the code, inside its minute. Sent to the
+ * merchant once per refused customer (`to` = them), with a fixed warning as
+ * content, never the text. The customer gets the plain
+ * `regby_code_already_redeemed` failure. A security signal: whoever was first
+ * may have read the code off the merchant's screen, so the merchant screen
+ * warns loudly.
  */
 export const CONFLICT_INTENT = 'regby_conflict';
 
@@ -43,7 +43,7 @@ export const FAILURE_INTENTS = {
   request_regby_content: [
     'regby_code_not_found',
     'regby_code_expired',
-    CONFLICT_INTENT,
+    'regby_code_already_redeemed',
     'regby_code_locked',
   ],
 } as const satisfies Record<RequestIntent, readonly string[]>;
@@ -66,7 +66,7 @@ export const REGBY_ERROR_TEXT: Record<RegbyErrorReason, string> = {
   regby_code_busy: 'ReGBY is busy right now. Try again in a moment.',
   regby_code_not_found: 'Invalid ReGBY Code. Please input the correct code.',
   regby_code_expired: 'This ReGBY Code has expired. Ask for a new one.',
-  regby_conflict: 'Request and enter the new code.',
+  regby_code_already_redeemed: 'Request and enter the new code.',
   regby_code_locked: 'This ReGBY Code is no longer valid. Ask for a new one.',
   'too-long': 'This text is too long for ReGBY. Shorten it and try again.',
   binary: 'This text contains characters ReGBY cannot carry.',
