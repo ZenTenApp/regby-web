@@ -7,8 +7,9 @@ import { defineConfig, loadEnv } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// CI's release step sets package.json to the version being tagged before it
-// builds, so the footer always names the release that is deployed.
+// CI sets package.json to the version it deploys before it builds: the release
+// being tagged, or `<release>-staging.<run>` on staging, so the footer always
+// names the build that is live.
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   version: string;
 };
@@ -19,7 +20,7 @@ export default defineConfig(({ command, mode }) => {
   if (command === 'build') {
     const key = loadEnv(mode, process.cwd(), 'VITE_').VITE_REGBY_MIDDLEMAN_PUBKEY ?? '';
     if (!/^[0-9a-f]{64}$/.test(key)) {
-      throw new Error('VITE_REGBY_MIDDLEMAN_PUBKEY must be 64 lowercase hex chars (see .env.production)');
+      throw new Error(`VITE_REGBY_MIDDLEMAN_PUBKEY must be 64 lowercase hex chars (see .env.${mode})`);
     }
   }
 

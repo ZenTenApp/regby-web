@@ -8,6 +8,7 @@
     "dev": "vite",
     "dev:lan": "vite --mode lan --host",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging --base /regby-staging/",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run"

@@ -95,96 +95,18 @@ jobs:
         if: steps.dry.outputs.new_release_published == 'true'
         run: npm run build
 
-      # Host key comes from a secret, not ssh-keyscan: keyscan trusts whatever
-      # answers at deploy time, which is exactly the check being skipped.
-      # Generate the secret once with `ssh-keyscan <DEPLOY_HOST>`.
-      - name: Configure SSH
-        if: steps.dry.outputs.new_release_published == 'true'
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        run: |
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-
-          # A known_hosts entry is keyed by the exact host string, so the
-          # connection would only report a bare "Host key verification failed".
-          # Name the three ways to get there instead.
-          if [ ! -s ~/.ssh/known_hosts ]; then
-            echo "::error::DEPLOY_KNOWN_HOSTS is empty or unset."
-            exit 1
-          fi
-          if grep -q '^|1|' ~/.ssh/known_hosts; then
-            echo "::error::DEPLOY_KNOWN_HOSTS holds hashed entries, which only" \
-                 "match the host they were hashed for. Regenerate with:" \
-                 "ssh-keyscan $DEPLOY_HOST"
-            exit 1
-          fi
-          if ! ssh-keygen -F "$DEPLOY_HOST" -f ~/.ssh/known_hosts > /dev/null; then
-            echo "::error::DEPLOY_KNOWN_HOSTS ($(wc -l < ~/.ssh/known_hosts) entries)" \
-                 "names no host matching DEPLOY_HOST. The two secrets have to" \
-                 "agree on how the host is spelled. Regenerate with:" \
-                 "ssh-keyscan $DEPLOY_HOST"
-            exit 1
-          fi
-
-      # The hosting account has SFTP but no shell, which rules rsync out (it runs
-      # its own binary on the far side). `lftp mirror` is the same directory
-      # sync over SFTP. lftp is not on the runner image, hence the install.
-      - name: Install lftp
-        if: steps.dry.outputs.new_release_published == 'true'
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      # Two passes, in this order, because a static site is briefly inconsistent
-      # while it uploads: pass one adds the new hashed assets without deleting
-      # anything, so the old index.html keeps resolving; pass two writes the new
-      # index.html and only then removes what the build dropped.
-      #
-      # --delete makes DEPLOY_PATH this app's alone. The excludes are cPanel's
-      # own directories in that docroot: .well-known carries the ACME challenges
-      # that renew the TLS certificate, and cgi-bin comes with every docroot.
-      #
-      # `open -u USER,` with the empty password stops lftp prompting for one and
-      # falling back to an anonymous login; the key goes to ssh, not lftp.
+      # Upload and live check, shared with deploy-staging.yml; the script holds
+      # the host key checks and the two-pass upload. It removes the key on exit.
       - name: Deploy to regby.nostr.box
         if: steps.dry.outputs.new_release_published == 'true'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          lftp -c "
-            set sftp:connect-program 'ssh -a -x -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts';
-            open -u $DEPLOY_USER, sftp://$DEPLOY_HOST;
-            mirror --reverse --verbose --parallel=4 \
-                   --exclude '^\.well-known/' --exclude '^cgi-bin/' \
-                   --exclude '(^|/)\.DS_Store$' --exclude '^index\.html$' \
-                   dist/ '$DEPLOY_PATH';
-            mirror --reverse --verbose --delete \
-                   --exclude '^\.well-known/' --exclude '^cgi-bin/' \
-                   --exclude '(^|/)\.DS_Store$' \
-                   dist/ '$DEPLOY_PATH';
-          "
-
-      # The key is only needed for the upload; drop it before anything else runs.
-      - name: Remove deploy key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
-
-      # The deploy is only done when the server serves it: the shell, and the
-      # exact entry script this build's index.html names (a stale or partial
-      # upload fails the second check).
-      - name: Verify the live site
-        if: steps.dry.outputs.new_release_published == 'true'
-        run: |
-          curl -sSf --retry 3 --retry-delay 5 https://regby.nostr.box/ | grep -q '<div id="root">'
-          entry=$(grep -o 'src="/assets/[^"]*\.js"' dist/index.html | head -1 | cut -d'"' -f2)
-          test -n "$entry"
-          curl -sSf -o /dev/null "https://regby.nostr.box$entry"
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          SITE_URL: https://regby.nostr.box/
+        run: scripts/deploy-sftp.sh
 
       # Matches the `regby-web-v*.tar.gz` glob in release.config.cjs, so the
       # exact deployed tree is attached to the GitHub Release.

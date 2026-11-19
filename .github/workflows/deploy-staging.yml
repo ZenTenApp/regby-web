@@ -1,0 +1,70 @@
+name: Deploy ReGBY Web staging
+
+# Every push to `staging` builds against the staging broker (.env.staging) and
+# uploads to https://nostr.box/regby-staging/. No release, tag or changelog:
+# those belong to main (deploy.yml). Same host and secrets as production except
+# the path, DEPLOY_PATH_STAGING.
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run, so an older bundle never lands on
+# top of a newer one.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # A manual run from any other branch would upload that branch as staging.
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # The footer names the build: the last release plus this run, so a
+      # staging bundle is never mistaken for the release it started from.
+      - name: Set staging version
+        run: npm version "$(node -p 'require("./package.json").version')-staging.${{ github.run_number }}" --no-git-tag-version
+
+      - name: Build
+        run: npm run build:staging
+
+      # The upload deletes whatever DEPLOY_PATH holds that the build lacks, so
+      # it must be the staging folder alone: never a docroot, whose site would
+      # be wiped.
+      - name: Deploy to nostr.box/regby-staging
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_STAGING }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          SITE_URL: https://nostr.box/regby-staging/
+        run: |
+          if [ "$(basename "${DEPLOY_PATH:-}")" != regby-staging ]; then
+            echo "::error::DEPLOY_PATH_STAGING must be set and end in /regby-staging, the folder the site is served from"
+            exit 1
+          fi
+          scripts/deploy-sftp.sh

@@ -48,7 +48,7 @@ project root and this spec:
 | Customer redeem screen | A failed redeem marks the empty text frame: "ERROR" in the sender strip, the reason in the copy strip (after a `regby_code_already_redeemed`, "Request and enter the new code."), boxes cleared for the next code (Figma `figma/conflict.svg`). Back clears the error first; only Back from the empty frame signs out | A refused customer retries with a new code and must not lose a throwaway key to a stray Back |
 | Customer content screen | Clear under the code, in Paste's slot, returns to the empty redeem screen, as Back does | Figma `figma/conflict.svg` |
 | SSH key login | The subaccount step is labelled "Wallet Label" | |
-| Broker key | `VITE_REGBY_MIDDLEMAN_PUBKEY` in `.env`, production key by default | Validated as 64 hex at load |
+| Broker key | `VITE_REGBY_MIDDLEMAN_PUBKEY` in `.env`, production key by default; `.env.production` and `.env.staging` pin the deployed builds | Validated as 64 hex at load and at build |
 
 ## Verification
 

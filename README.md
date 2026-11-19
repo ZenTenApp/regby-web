@@ -26,6 +26,7 @@ npm run dev:lan          # https on the LAN, so Paste works on a phone
 | script | does |
 | --- | --- |
 | `npm run build` | typecheck and build to `dist/` (static, host anywhere over https) |
+| `npm run build:staging` | the same against the staging broker, served from `/regby-staging/` |
 | `npm run typecheck` | `tsc -b` |
 | `npm test` | protocol helpers and SSH-to-npub parity vectors |
 
@@ -36,8 +37,17 @@ a `feat`/`fix` commit releases (semantic-release tags `vX.Y.Z`, writes
 `CHANGELOG.md`) and uploads `dist/` to https://regby.nostr.box/ over SFTP;
 other commit types do nothing. The broker key comes from `.env.production`.
 
+Push to `staging` runs
+[.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml):
+every push builds with `npm run build:staging` (the staging broker key from
+`.env.staging`, base path `/regby-staging/`) and uploads to
+https://nostr.box/regby-staging/. No release or tag. Both workflows upload
+through [scripts/deploy-sftp.sh](scripts/deploy-sftp.sh).
+
 Repo secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH` (the docroot),
-`DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <DEPLOY_HOST>`, unhashed),
+`DEPLOY_PATH_STAGING` (the `regby-staging` folder in nostr.box's docroot,
+emptied of anything the build lacks on every deploy), `DEPLOY_SSH_KEY`,
+`DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <DEPLOY_HOST>`, unhashed),
 `MATRIX_ACCESS_TOKEN`.
 
 ## Layout
