@@ -28,8 +28,8 @@ export const DELIVERED_INTENT = 'regby_content_delivered';
 
 /**
  * Someone else already redeemed the code, inside its minute. Sent to the
- * merchant once per refused customer (`to` = them), with a fixed warning as
- * content, never the text. The customer gets the plain
+ * merchant once per refused customer (`to` = them), with empty content: the
+ * warning on screen is the app's own. The customer gets the plain
  * `regby_code_already_redeemed` failure. A security signal: whoever was first
  * may have read the code off the merchant's screen, so the merchant screen
  * warns loudly.
@@ -170,7 +170,7 @@ export type TextCheck = 'same' | 'different' | 'unreadable';
 /**
  * One customer the broker reported for a minted code: the one who got the text
  * (`DELIVERED_INTENT`, `redeemed`), whose echoed text is checked, or one refused
- * after it (`CONFLICT_INTENT`), whose content is only the broker's warning.
+ * after it (`CONFLICT_INTENT`), which carries no content.
  */
 export type CodeNotice = {
   /** Hex pubkey of the customer who sent the code. */

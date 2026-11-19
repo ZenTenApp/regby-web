@@ -300,7 +300,7 @@ export class RegbyClient {
     if (intent !== DELIVERED_INTENT && intent !== CONFLICT_INTENT) return null;
     const customer = readPubkeyTag(event.tags, 'to');
     if (customer === null) return null;
-    // A conflict carries the broker's fixed warning, not our text: nothing to check.
+    // A conflict carries no content, so there is no text to check.
     if (intent === CONFLICT_INTENT) return { customer, redeemed: false, at: event.created_at };
     const textCheck = await this.#open(event.content).then(
       (text): TextCheck => (text === sentText ? 'same' : 'different'),
