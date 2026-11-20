@@ -30,7 +30,6 @@ import {
   FAILURE_INTENTS,
   REPLY_INTENT,
   RegbyError,
-  addCodeNotice,
   assertCodeTag,
   assertMintable,
   codeExpiresAt,
@@ -51,11 +50,10 @@ export interface MintedCode {
   /** Local epoch ms, mapped from the broker clock that decides expiry. */
   expiresAt: number;
   /**
-   * Call `listener` with every customer the broker has reported for this code,
-   * the one who got the text first: now, and again on each new one while still
-   * listened for. Returns the unsubscribe.
+   * Call `listener` with the broker's notices for this code: now, and again on
+   * each new one while still listened for. Returns the unsubscribe.
    */
-  watchCustomers: (listener: CodeNoticeListener) => () => void;
+  watchNotices: (listener: CodeNoticeListener) => () => void;
   /** Stop listening for notices. */
   stop: () => void;
 }
@@ -143,9 +141,8 @@ export class RegbyClient {
       onNotice: (event) => {
         void this.#readNotice(event, content).then((notice) => {
           if (notice === null) return;
-          const next = addCodeNotice(notices, notice);
-          if (next === notices) return;
-          notices = next;
+          // No dedupe: the pool already drops an event id it has seen from any relay.
+          notices = [...notices, notice];
           for (const listener of listeners) listener(notices);
         });
       },
@@ -163,14 +160,14 @@ export class RegbyClient {
         clearTimeout(timer);
         request.close();
       };
-      const watchCustomers = (listener: CodeNoticeListener) => {
+      const watchNotices = (listener: CodeNoticeListener) => {
         listeners.add(listener);
         listener(notices);
         return () => {
           listeners.delete(listener);
         };
       };
-      return { code, expiresAt, watchCustomers, stop };
+      return { code, expiresAt, watchNotices, stop };
     } catch (err) {
       request.close();
       throw err;
@@ -291,22 +288,22 @@ export class RegbyClient {
 
   /**
    * A delivered or conflict notice as the merchant sees it, or null when it is
-   * neither or names no customer. A delivered notice's content is the text the
-   * broker says it delivered, checked against the text this merchant sent: a
-   * broker serving the customer something else shows up here.
+   * neither or a delivered one names no customer. A delivered notice's content
+   * is the text the broker says it delivered, checked against the text this
+   * merchant sent: a broker serving the customer something else shows up here.
    */
   async #readNotice(event: NostrEvent, sentText: string): Promise<CodeNotice | null> {
     const intent = readTag(event.tags, 'i');
-    if (intent !== DELIVERED_INTENT && intent !== CONFLICT_INTENT) return null;
+    // A conflict names nobody and has no text to check.
+    if (intent === CONFLICT_INTENT) return { redeemed: false };
+    if (intent !== DELIVERED_INTENT) return null;
     const customer = readPubkeyTag(event.tags, 'to');
     if (customer === null) return null;
-    // A conflict carries no content, so there is no text to check.
-    if (intent === CONFLICT_INTENT) return { customer, redeemed: false, at: event.created_at };
     const textCheck = await this.#open(event.content).then(
       (text): TextCheck => (text === sentText ? 'same' : 'different'),
       (): TextCheck => 'unreadable',
     );
-    return { customer, redeemed: true, at: event.created_at, textCheck };
+    return { customer, redeemed: true, textCheck };
   }
 
   /** Plaintext of a broker reply; `""` travels unencrypted. */

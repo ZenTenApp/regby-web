@@ -51,7 +51,7 @@ export function MerchantCodeScreen({ minted, content, showQr, onRegenerate, onBa
   const [notices, setNotices] = useState<readonly CodeNotice[]>([]);
   const { run, busy, error } = useAction(onRegenerate, regbyErrorText);
 
-  useEffect(() => minted.watchCustomers(setNotices), [minted]);
+  useEffect(() => minted.watchNotices(setNotices), [minted]);
 
   const winner = notices.find((notice) => notice.redeemed);
   const tampered = winner?.textCheck === 'different';

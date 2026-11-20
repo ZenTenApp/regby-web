@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  addCodeNotice,
   assertCodeTag,
   assertMintable,
   codeExpiresAt,
   displayableContent,
   isBlankContent,
   normalizeRegbyCode,
-  type CodeNotice,
 } from './protocol';
 
 describe('normalizeRegbyCode', () => {
@@ -94,30 +92,5 @@ describe('codeExpiresAt', () => {
     ['device far behind: capped at broker now - skew', 900, 29],
   ])('%s', (_, requestCreatedAt, secondsLeft) => {
     expect(codeExpiresAt(requestCreatedAt, brokerNow, receivedAt)).toBe(receivedAt + secondsLeft * 1000);
-  });
-});
-
-describe('addCodeNotice', () => {
-  const winner: CodeNotice = { customer: 'a'.repeat(64), redeemed: true, at: 1000, textCheck: 'same' };
-  const refused: CodeNotice = { customer: 'b'.repeat(64), redeemed: false, at: 1001 };
-  const later: CodeNotice = { customer: 'c'.repeat(64), redeemed: false, at: 1002 };
-
-  it('puts the customer who got the text first, whatever order the notices land in', () => {
-    // The winner's notice waits for its own reply, so a refused one can arrive first.
-    expect(addCodeNotice(addCodeNotice([], refused), winner)).toEqual([winner, refused]);
-    expect(addCodeNotice(addCodeNotice([], winner), refused)).toEqual([winner, refused]);
-  });
-
-  it('goes by the intent, not the stamp', () => {
-    expect(addCodeNotice([refused], { ...winner, at: 2000 })).toEqual([{ ...winner, at: 2000 }, refused]);
-  });
-
-  it('keeps refused customers in arrival order', () => {
-    expect(addCodeNotice(addCodeNotice([], later), refused)).toEqual([refused, later]);
-  });
-
-  it('keeps one entry per customer and returns the same list for a repeat', () => {
-    const notices = addCodeNotice([], winner);
-    expect(addCodeNotice(notices, { ...winner, at: 999 })).toBe(notices);
   });
 });

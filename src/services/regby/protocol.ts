@@ -28,7 +28,7 @@ export const DELIVERED_INTENT = 'regby_content_delivered';
 
 /**
  * Someone else already redeemed the code, inside its minute. Sent to the
- * merchant once per refused customer (`to` = them), with empty content: the
+ * merchant once per refused customer, bare: no `to`, empty content. The
  * warning on screen is the app's own. The customer gets the plain
  * `regby_code_already_redeemed` failure. A security signal: whoever was first
  * may have read the code off the merchant's screen, so the merchant screen
@@ -168,31 +168,22 @@ export function isBlankContent(content: string): boolean {
 export type TextCheck = 'same' | 'different' | 'unreadable';
 
 /**
- * One customer the broker reported for a minted code: the one who got the text
- * (`DELIVERED_INTENT`, `redeemed`), whose echoed text is checked, or one refused
- * after it (`CONFLICT_INTENT`), which carries no content.
+ * One notice the broker sent about a minted code: the customer who got the
+ * text (`DELIVERED_INTENT`, `redeemed`), named and with the echoed text
+ * checked, or one refused after it (`CONFLICT_INTENT`), which names nobody and
+ * carries no content.
  */
-export type CodeNotice = {
-  /** Hex pubkey of the customer who sent the code. */
-  customer: string;
-  /** The notice's `created_at`; the broker stamps a code's notices in the
-   *  order their customers arrived. */
-  at: number;
-} & ({ redeemed: true; textCheck: TextCheck } | { redeemed: false });
+export type CodeNotice =
+  | {
+      redeemed: true;
+      /** Hex pubkey of the customer who got the text. */
+      customer: string;
+      textCheck: TextCheck;
+    }
+  | { redeemed: false };
 
-/** Receives a code's whole notice list, in `addCodeNotice` order, on each change. */
+/** Receives a code's whole notice list, in arrival order, on each change. */
 export type CodeNoticeListener = (notices: readonly CodeNotice[]) => void;
-
-/**
- * Fold a notice into a code's list: one entry per customer, the customer who
- * got the text first, then the refused ones in arrival order. Notices land in
- * any order (the winner's is published after its own reply), and a relay may
- * repeat one. Returns the same list when the customer is already in it.
- */
-export function addCodeNotice(notices: readonly CodeNotice[], notice: CodeNotice): readonly CodeNotice[] {
-  if (notices.some((known) => known.customer === notice.customer)) return notices;
-  return [...notices, notice].sort((a, b) => Number(b.redeemed) - Number(a.redeemed) || a.at - b.at);
-}
 
 /** A pairing tag's pubkey, or null when absent or not hex. */
 export function readPubkeyTag(tags: readonly string[][], name: string): string | null {
