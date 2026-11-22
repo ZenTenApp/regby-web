@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.10.0](https://github.com/ZenTenApp/regby-web/compare/v1.9.0...v1.10.0) (2026-11-22)
+
+
+### Features
+
+* implement the Figma SSH login and redeem failure screens ([93b827b](https://github.com/ZenTenApp/regby-web/commit/93b827b536fb5a421fec659ab61f3cb715fec9bc))
+
 # [1.9.0](https://github.com/ZenTenApp/regby-web/compare/v1.8.0...v1.9.0) (2026-11-10)
 
 
