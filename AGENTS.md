@@ -20,5 +20,7 @@ directly, or types the code and gets the text back through the broker.
 - The SSH login must derive the same npub as `chat` and `usdt-pay`:
   Ed25519 seed -> BIP39 entropy -> NIP-06 `m/44'/1237'/0'/0/0`. A non-empty
   subaccount first replaces the seed with meltify's `-s` derivation,
-  `SHA256(SHA256(name) || seed)`, as chat does.
+  `SHA256(SHA256(name) || seed)`, as chat does. That is the Wallet Label;
+  the optional Card Label after it is the BIP39 passphrase over those
+  words (trimmed), as zentenpay's Cards, and Skip (empty) is the wallet itself.
 - Secrets (PEM, passphrase, secret key) never enter React state.

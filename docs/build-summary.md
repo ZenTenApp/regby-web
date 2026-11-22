@@ -33,6 +33,7 @@ project root and this spec:
 | Stack | Vite, React 19, strict TS, `nostr-tools`, `qrcode`, `lucide-react`, `@fontsource/inter` | Matches `chat`; strict CSP means no CDN fonts |
 | Login options | Generate KeyPair, Login with Signer (NIP-07), Login with SSH Key | The Login PNG shows all three (its "Paste SSH Key" renamed); spec names the last two |
 | SSH derivation | Ed25519 seed, BIP39 entropy, NIP-06 `m/44'/1237'/0'/0/0` | Same npub as chat and usdt-pay; pinned by a test using chat's vectors |
+| SSH labels | Wallet Label (required) is `meltify -s`; Card Label (optional, Skip) is the BIP39 passphrase | Figma's four-step SSH login; Cards as in zentenpay, pinned by the official BIP39 vector |
 | Unencrypted SSH keys | Refused | Same rule as chat |
 | bcrypt | In a module Web Worker, terminated after login | Seconds-long synchronous call; terminating drops cloned secrets |
 | Secrets | PEM and passphrase live in DOM refs, never React state | Ported discipline from chat |
@@ -45,9 +46,8 @@ project root and this spec:
 | QR payload | The content itself; the code is typed only | Changed after v1.0.0 at the user's request. Text over QR capacity (~2.9 KB) shows a fallback pointing to the code |
 | Display of redeemed text | Plain text, `white-space: pre-wrap`, hidden and bidi characters stripped for display only; Copy keeps the original | Broker is untrusted |
 | Merchant code screen | Countdown from the request `created_at`. `regby_content_delivered` shows as "Redeemed by npub…". Expiry and a `regby_conflict` (a customer refused after the winner) both void the code: the boxes empty, and Generate (a new code for the same text) sits under them, in the same 247x49 slot as Paste and Clear. The status line reads "Code expired. Generate a new code." or, on a conflict, "Warning: Please confirm with customer." in the warning colour (Figma `figma/Merchant conflict and redesign.svg`). A delivered notice whose text differs from what was shared shows a boxed "Text mismatch" alert | Broker anchors expiry to `created_at`; whoever typed the code first may be an onlooker, and nothing on screen can tell which pubkey is the customer at the counter |
-| Customer redeem screen | A failed redeem marks the empty text frame: "ERROR" in the sender strip, the reason in the copy strip (after a `regby_code_already_redeemed`, "Request and enter the new code."), boxes cleared for the next code (Figma `figma/conflict.svg`). Back clears the error first; only Back from the empty frame signs out | A refused customer retries with a new code and must not lose a throwaway key to a stray Back |
+| Customer redeem screen | A failed redeem fills the empty text frame with its reason, grey not red: icon and title in the sender strip ("Code expired", "Code locked", "Code not found", else "Error encountered", which covers `regby_code_already_redeemed`), the icon large in the frame, "Request and enter new code." in the copy strip (a relay failure keeps its own text), boxes cleared for the next code (Figma `figma/redeem-scenarios.svg`). Back clears the failure first; only Back from the empty frame signs out | A refused customer retries with a new code and must not lose a throwaway key to a stray Back |
 | Customer content screen | Clear under the code, in Paste's slot, returns to the empty redeem screen, as Back does | Figma `figma/conflict.svg` |
-| SSH key login | The subaccount step is labelled "Wallet Label" | |
 | Broker key | `VITE_REGBY_MIDDLEMAN_PUBKEY` in `.env`, production key by default; `.env.production` and `.env.staging` pin the deployed builds | Validated as 64 hex at load and at build |
 
 ## Verification

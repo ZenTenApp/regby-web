@@ -45,6 +45,8 @@
   --qr-ink: #2e2e34;
   /* Sender and copy strips framing the redeemed text. */
   --strip: #fdfdfd;
+  /* The large failure icon standing in for the redeemed text. */
+  --watermark: #dfdfdf;
 
   /* Type scale: the small sizes repeat across many blocks, so a rescale is
      one edit here and paired elements (hint and note) cannot drift apart. */
@@ -398,11 +400,21 @@ textarea {
   gap: var(--login-gap);
 }
 
-/* A main button sharing the stack with a secondary action (SSH key:
-   Paste over Upload), a step down so the pair reads as one group. */
-.btn-sm {
-  min-height: 44px;
+/* The second of two alternatives (SSH key: Upload under Paste): framed white
+   rather than filled, a step down in type. Figma: 392x80, 2 px #D9D9D9, radius 10. */
+.btn-outline {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--field);
+  color: var(--text);
   font-size: var(--text-md);
+  font-weight: 500;
+}
+
+/* Brightening white shows nothing, so hover tints instead. */
+.btn-outline:hover:not(:disabled) {
+  filter: none;
+  background: var(--toggle-track);
 }
 
 /* Frameless actions: a bare icon (copy, regenerate) or an icon with a label
@@ -448,15 +460,6 @@ textarea {
 
 .text-button svg {
   color: var(--accent);
-}
-
-/* A text action standing on its own rather than beside the content it acts
-   on, centred at its own width when it sits in a stack. */
-.text-button-lg {
-  align-self: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: var(--text-md);
 }
 
 .icon-button[data-state='copied'],
@@ -695,7 +698,7 @@ textarea {
   font-size: var(--text-xs);
 }
 
-/* A warning under a field (the Wallet Label's; Figma: Card Label), inset to the field's text. */
+/* A warning under a field (the Wallet and Card Labels'), inset to the field's text. */
 .field-hint[data-tone='danger'] {
   display: flex;
   align-items: center;
@@ -829,6 +832,15 @@ textarea {
   flex: 1;
   height: 1.5px;
   background: var(--hairline);
+}
+
+/* A bare "or" between two stacked buttons (SSH key: Paste or Upload). Figma:
+   24 px under Paste, 27 px over Upload, the stack's gap included; the word
+   is larger and its gap to the lines wider than the merchant's caption. */
+.stack > .divider {
+  gap: clamp(20px, 8cqw, 32px);
+  margin: clamp(0px, 2cqh, 8px) 0 clamp(0px, 2.5cqh, 10px);
+  font-size: var(--text-md);
 }
 
 /* Sizes shared by the code and the status row above it, which the Figma
@@ -1069,31 +1081,6 @@ img.qr {
   text-align: center;
 }
 
-/* A failed redeem: ERROR centred in the sender's strip, what to do in the copy strip. */
-.content-panel-head:has(> .content-panel-error) {
-  justify-content: center;
-  padding: 0 12px;
-}
-
-.content-panel-error {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--danger);
-  font-size: var(--text-md);
-  font-weight: 700;
-}
-
-.content-panel-error-text {
-  margin: 0;
-  padding: 4px 0;
-  color: var(--subtle);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: center;
-}
-
 /* Redeem progress, centred where the text will appear. */
 .content-panel-status {
   display: flex;
@@ -1106,6 +1093,45 @@ img.qr {
 /* Auto margins centre with equal space above and below. */
 .content-panel-status .status {
   margin: auto 0;
+}
+
+/* A failed redeem: the reason's icon and title centred in the sender's strip,
+   the same icon large where the text would be, what to do in the copy strip.
+   Grey, not red: the customer did nothing wrong and only needs a new code. */
+.content-panel-head:has(> .content-panel-failure-title) {
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.content-panel-failure-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* Figma: a ~150 px glyph in the 448x261 frame; gives way on a shrunk card. */
+.content-panel-failure-icon {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--watermark);
+}
+
+.content-panel-failure-icon svg {
+  width: auto;
+  height: min(112px, 100%);
+}
+
+.content-panel-failure-text {
+  margin: 0;
+  padding: 4px 0;
+  color: var(--subtle);
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .visually-hidden {

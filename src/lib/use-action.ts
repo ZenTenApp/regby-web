@@ -1,14 +1,15 @@
 import { useCallback, useState } from 'react';
 
 /** Busy and error state around one async action, so each screen does not
- *  re-implement the same try/catch/finally. `toText` turns a failure into
- *  the user-facing message. */
-export function useAction<A extends unknown[]>(
+ *  re-implement the same try/catch/finally. `toError` turns a failure into
+ *  what the screen shows: usually the user-facing message, or a reason when
+ *  the screen draws each failure its own way. */
+export function useAction<A extends unknown[], E = string>(
   action: (...args: A) => Promise<void>,
-  toText: (err: unknown) => string,
+  toError: (err: unknown) => E,
 ) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<E | null>(null);
 
   const run = useCallback(
     async (...args: A) => {
@@ -17,12 +18,12 @@ export function useAction<A extends unknown[]>(
       try {
         await action(...args);
       } catch (err) {
-        setError(toText(err));
+        setError(toError(err));
       } finally {
         setBusy(false);
       }
     },
-    [action, toText],
+    [action, toError],
   );
 
   return { run, busy, error, setError };

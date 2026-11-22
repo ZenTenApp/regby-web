@@ -1,20 +1,29 @@
 /**
- * Log in with an encrypted OpenSSH Ed25519 key, in three steps: the key, its
- * passphrase, then the subaccount, shown as the Wallet Label. Same derivation as
- * chat and usdt-pay, so the same key is the same npub everywhere. The
- * subaccount is required and opens the identity `meltify -s <name>` derives
- * from the key, as in chat.
+ * Log in with an encrypted OpenSSH Ed25519 key, in four steps: the key, its
+ * passphrase, the subaccount shown as the Wallet Label, then the optional
+ * Card Label. Same derivation as chat and usdt-pay, so the same key is the
+ * same npub everywhere. The subaccount is required and opens the identity
+ * `meltify -s <name>` derives from the key, as in chat. A card label opens
+ * that wallet's Card (its BIP39 passphrase, as in zentenpay); Skip leaves it
+ * empty and logs in as the wallet itself.
  *
  * The key is never shown: Paste reads it from the clipboard (then clears the
- * clipboard) and Upload from a file, into a ref. The passphrase and subaccount
- * live only in their DOM nodes. All three are read at submit time; React state
- * holds just whether the passphrase and subaccount are filled. Every step stays
- * mounted (the inactive ones `hidden`) so the typed values survive moving between steps.
+ * clipboard) and Upload from a file, into a ref. The passphrase and both
+ * labels live only in their DOM nodes. All are read at submit time; React
+ * state holds just whether each field is filled. Every step stays mounted
+ * (the inactive ones `hidden`) so the typed values survive moving between steps.
  */
-import { Info } from 'lucide-react';
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from 'react';
+import { Info, Paperclip } from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 
-import FileAttachmentIcon from '@/assets/icons/file-attachment.svg?react';
 import { Page, ScreenHeader, ScreenTitle } from '@/components/Layout';
 import { MaskedInput } from '@/components/MaskedInput';
 import { Spinner } from '@/components/Spinner';
@@ -28,6 +37,7 @@ import {
   estimateSshLoginSeconds,
   inspectSshKey,
   loginWithSsh,
+  normalizeCardLabel,
   prepareSshLogin,
 } from '@/services/keys/ssh-login';
 
@@ -48,7 +58,7 @@ function formatEstimate(seconds: number): string {
 }
 
 /** In order: Back walks this list backwards. */
-const STEPS = ['key', 'passphrase', 'subaccount'] as const;
+const STEPS = ['key', 'passphrase', 'subaccount', 'card'] as const;
 type Step = (typeof STEPS)[number];
 
 interface SshKeyScreenProps {
@@ -64,14 +74,75 @@ function dropSecrets(pem: RefObject<string>, ...fields: (HTMLInputElement | null
   for (const field of fields) if (field) field.value = '';
 }
 
+interface FieldStepProps {
+  id: string;
+  shown: boolean;
+  title: string;
+  subtitle: string;
+  /** Screen-reader name of the field; the title says it visually. */
+  label: string;
+  placeholder: string;
+  inputRef: RefObject<HTMLInputElement | null>;
+  disabled?: boolean;
+  /** Red warning under the field, as the Figma's label steps carry. */
+  hint?: string;
+  /** The typed value, for the caller to keep only whether it is filled. */
+  onValue: (value: string) => void;
+  /** The step's submit button, at the card's foot. */
+  children: ReactNode;
+}
+
+/** One masked field per step (passphrase, Wallet Label, Card Label), titled,
+ *  with its action pinned to the card's foot. */
+function FieldStep({
+  id,
+  shown,
+  title,
+  subtitle,
+  label,
+  placeholder,
+  inputRef,
+  disabled = false,
+  hint,
+  onValue,
+  children,
+}: FieldStepProps) {
+  return (
+    <div className="card-fill" hidden={!shown}>
+      <ScreenTitle title={title} subtitle={subtitle} centered />
+      <label htmlFor={id} className="visually-hidden">
+        {label}
+      </label>
+      <MaskedInput
+        id={id}
+        ref={inputRef}
+        placeholder={placeholder}
+        autoComplete="off"
+        disabled={disabled}
+        onChange={(event) => onValue(event.target.value)}
+      />
+      {hint && (
+        <p className="field-hint" data-tone="danger">
+          <Info size={ICON_SIZE} />
+          {hint}
+        </p>
+      )}
+      <div className="spacer" />
+      <div className="stack">{children}</div>
+    </div>
+  );
+}
+
 export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   const pemRef = useRef('');
   const passRef = useRef<HTMLInputElement>(null);
   const subaccountRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>('key');
   const [hasPass, setHasPass] = useState(false);
   const [hasSubaccount, setHasSubaccount] = useState(false);
+  const [hasCard, setHasCard] = useState(false);
   const [busy, setBusy] = useState(false);
   const [estimate, setEstimate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +150,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
   useEffect(() => {
     prepareSshLogin();
     // Captured now: the refs are detached by the time the cleanup runs.
-    const fields = [passRef.current, subaccountRef.current];
+    const fields = [passRef.current, subaccountRef.current, cardRef.current];
     return () => {
       cancelSshLogin();
       dropSecrets(pemRef, ...fields);
@@ -96,6 +167,7 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     const stepField: Partial<Record<Step, RefObject<HTMLElement | null>>> = {
       passphrase: passRef,
       subaccount: subaccountRef,
+      card: cardRef,
     };
     stepField[step]?.current?.focus();
   }, [step]);
@@ -151,21 +223,28 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     else onBack();
   };
 
+  /** Whether a step may move on. The key step moves on by Paste or Upload,
+   *  never by submit; the Card Label is optional. */
+  const ready: Record<Step, boolean> = { key: false, passphrase: hasPass, subaccount: hasSubaccount, card: true };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    // Enter or Continue on the passphrase step only moves on; the key is unlocked on the last step.
-    if (step === 'passphrase') {
-      if (hasPass) goTo('subaccount');
+    // Checked here, not only via `disabled`: Enter submits through the form's first
+    // submit button, a hidden step's, so the button state is bypassed.
+    if (!ready[step] || busy) return;
+    // Every step but the last only moves on; the key is unlocked on the last.
+    const next = STEPS[STEPS.indexOf(step) + 1];
+    if (next) {
+      goTo(next);
       return;
     }
-    // Checked here, not only via `disabled`: Enter submits through the form's first
-    // submit button, the hidden passphrase one, so the button state is bypassed.
-    if (step !== 'subaccount' || !hasSubaccount || busy) return;
     const pem = pemRef.current;
     const passphrase = passRef.current?.value ?? '';
     // Not trimmed: meltify hashes the name byte for byte, and a trimmed one
     // would quietly open a different identity than `meltify -s` prints.
     const subaccount = subaccountRef.current?.value ?? '';
+    // `loginWithSsh` trims it; empty there is Skip, the wallet itself.
+    const cardLabel = cardRef.current?.value ?? '';
     setError(null);
 
     let rounds: number;
@@ -182,8 +261,8 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
       () => undefined,
     );
     try {
-      const signer = await loginWithSsh(pem, passphrase, subaccount);
-      dropSecrets(pemRef, passRef.current, subaccountRef.current);
+      const signer = await loginWithSsh({ pem, passphrase, subaccount, cardLabel });
+      dropSecrets(pemRef, passRef.current, subaccountRef.current, cardRef.current);
       onSigner(signer);
     } catch (err) {
       const code = keyErrorCode(err);
@@ -199,74 +278,73 @@ export function SshKeyScreen({ role, onBack, onSigner }: SshKeyScreenProps) {
     <Page role={role}>
       <ScreenHeader role={role} onBack={back} backDisabled={busy} />
 
-      <form className="card-fill" onSubmit={(event) => void submit(event)}>
+      {/* Any edit to a field drops the error it may have caused. */}
+      <form className="card-fill" onSubmit={(event) => void submit(event)} onInput={() => setError(null)}>
         <div className="card-fill" hidden={step !== 'key'}>
           <ScreenTitle title="Input SSH Key" subtitle="Paste your Ed25519 Private Key" centered />
           {/* Key files usually have no extension, so no `accept` filter. */}
           <input ref={fileRef} type="file" hidden onChange={loadFile} />
           <div className="spacer" />
           <div className="stack">
-            <button type="button" className="btn btn-sm" onClick={() => void pasteKey()}>
-              Paste SSH Key
+            <button type="button" className="btn" onClick={() => void pasteKey()}>
+              Paste
             </button>
-            <button type="button" className="text-button text-button-lg" onClick={() => fileRef.current?.click()}>
-              <FileAttachmentIcon width={ICON_SIZE} height={ICON_SIZE} />
-              Upload File
-            </button>
-          </div>
-        </div>
-
-        <div className="card-fill" hidden={step !== 'passphrase'}>
-          <ScreenTitle title="Enter Passphrase" subtitle="Enter your SSH Key Passphrase" centered />
-          <label htmlFor="passphrase" className="visually-hidden">
-            Passphrase
-          </label>
-          <MaskedInput
-            id="passphrase"
-            ref={passRef}
-            placeholder="Enter Passphrase..."
-            autoComplete="off"
-            onChange={(event) => {
-              setHasPass(event.target.value !== '');
-              setError(null);
-            }}
-          />
-          <div className="spacer" />
-          <div className="stack">
-            <button type="submit" className="btn" disabled={!hasPass}>
-              Continue to Wallets
+            <p className="divider">or</p>
+            <button type="button" className="btn btn-outline" onClick={() => fileRef.current?.click()}>
+              <Paperclip size={ICON_SIZE} />
+              Upload
             </button>
           </div>
         </div>
 
-        <div className="card-fill" hidden={step !== 'subaccount'}>
-          <ScreenTitle title="Enter Wallet Label" subtitle="Wallet Labels are Case Sensitive" centered />
-          <label htmlFor="subaccount" className="visually-hidden">
-            Wallet Label
-          </label>
-          <MaskedInput
-            id="subaccount"
-            ref={subaccountRef}
-            placeholder="Wallet Label..."
-            autoComplete="off"
-            disabled={busy}
-            onChange={(event) => {
-              setHasSubaccount(event.target.value !== '');
-              setError(null);
-            }}
-          />
-          <p className="field-hint" data-tone="danger">
-            <Info size={ICON_SIZE} />
-            Wallet Label is Case Sensitive. A new input will create a new Wallet.
-          </p>
-          <div className="spacer" />
-          <div className="stack">
-            <button type="submit" className="btn" disabled={busy || !hasSubaccount}>
-              {busy && <Spinner />}
-              {busy ? 'Unlocking…' : 'Continue'}
-            </button>
-          </div>
-        </div>
+        <FieldStep
+          id="passphrase"
+          shown={step === 'passphrase'}
+          title="Enter Passphrase"
+          subtitle="Enter your SSH Key Passphrase"
+          label="Passphrase"
+          placeholder="Enter Passphrase..."
+          inputRef={passRef}
+          onValue={(value) => setHasPass(value !== '')}
+        >
+          <button type="submit" className="btn" disabled={!hasPass}>
+            Continue to Cards
+          </button>
+        </FieldStep>
+
+        <FieldStep
+          id="subaccount"
+          shown={step === 'subaccount'}
+          title="Enter Wallet Label"
+          subtitle="Wallet Labels are Case Sensitive"
+          label="Wallet Label"
+          placeholder="Wallet Label..."
+          inputRef={subaccountRef}
+          hint="Wallet Label is Case Sensitive. A new input will create a new Card."
+          onValue={(value) => setHasSubaccount(value !== '')}
+        >
+          <button type="submit" className="btn" disabled={!hasSubaccount}>
+            Continue
+          </button>
+        </FieldStep>
+
+        <FieldStep
+          id="card"
+          shown={step === 'card'}
+          title="Enter Card Label"
+          subtitle="Card Labels are Case Sensitive"
+          label="Card Label"
+          placeholder="Card Label..."
+          inputRef={cardRef}
+          disabled={busy}
+          hint="Card Label is Case Sensitive. A new input will create a new Card."
+          onValue={(value) => setHasCard(normalizeCardLabel(value) !== '')}
+        >
+          <button type="submit" className="btn" disabled={busy}>
+            {busy && <Spinner />}
+            {busy ? 'Unlocking…' : hasCard ? 'Continue' : 'Skip'}
+          </button>
+        </FieldStep>
 
         {busy && <p className="note">Decrypting your key{estimate ? `, ${estimate}` : ''}. Keep this tab open.</p>}
         {error && <p className="error">{error}</p>}

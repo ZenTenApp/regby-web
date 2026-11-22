@@ -12,7 +12,9 @@ Mobile-friendly web client for [ReGBY](../regby-middleware/docs/protocol.md).
 
 Login, after picking a role: a throwaway key for this tab, a NIP-07 signer
 extension, or a passphrase-protected Ed25519 OpenSSH key (pasted or from
-file). The SSH key derives the same npub as `chat` and `usdt-pay`.
+file). The SSH key derives the same npub as `chat` and `usdt-pay`; its
+Wallet Label is `meltify -s`, and an optional Card Label opens that wallet's
+Card as in zentenpay.
 
 ## Run
 

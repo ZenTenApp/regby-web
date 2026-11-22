@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
 interface ContentPanelProps {
-  /** Sender line, or on the redeem screen ERROR after a failed redeem (else the strip stays empty). */
+  /** Sender line, or on the redeem screen what failed (else the strip stays empty). */
   head?: ReactNode;
-  /** Copy action or a note, or on the redeem screen what to do after a failed redeem. */
+  /** Copy action or a note, or on the redeem screen what to do after a failure. */
   foot?: ReactNode;
   children: ReactNode;
 }

@@ -12,8 +12,10 @@ export interface KeyWorkerRequestMap {
   /** Benchmark bcrypt and project the wait for `rounds`. */
   estimate: { rounds: number };
   /** Decrypt an OpenSSH key and derive the Nostr key it roots. A non-empty
-   *  `subaccount` swaps the key's seed for `meltify -s <subaccount>`'s first. */
-  'ssh-login': { pem: string; passphrase: string; subaccount: string };
+   *  `subaccount` (Wallet Label) swaps the key's seed for `meltify -s
+   *  <subaccount>`'s first; a non-empty `cardLabel` is then the BIP39
+   *  passphrase, opening that wallet's Card. */
+  'ssh-login': { pem: string; passphrase: string; subaccount: string; cardLabel: string };
 }
 
 export interface KeyWorkerResultMap {

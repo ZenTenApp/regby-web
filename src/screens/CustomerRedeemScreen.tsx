@@ -2,12 +2,12 @@
  * Customer step 1: the empty frame the redeemed text will fill, the code
  * boxes below. A full eight typed digits redeems the code through the broker;
  * no submit button. The merchant's QR needs no in-app scanner: it carries the
- * text itself, which a phone's own camera reads. A failed redeem marks the
- * frame's strips: ERROR on top, what to do below (after someone else redeemed
- * the code, ask for a new one). Back from there clears the error, like Back
- * from the text; only Back from the empty frame signs out.
+ * text itself, which a phone's own camera reads. A failed redeem fills the
+ * frame instead: the reason's icon and title on top, the icon large where the
+ * text would be, what to do below. Back from there clears the failure, like
+ * Back from the text; only Back from the empty frame signs out.
  */
-import { TriangleAlert } from 'lucide-react';
+import { Clock, Lock, Search, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { CodeInput } from '@/components/Code';
@@ -17,7 +17,22 @@ import { Spinner } from '@/components/Spinner';
 import { ICON_SIZE } from '@/components/icon';
 import { REGBY_CODE_LENGTH } from '@/config/regby';
 import { useAction } from '@/lib/use-action';
-import { regbyErrorText } from '@/services/regby/protocol';
+import { REGBY_ERROR_TEXT, regbyErrorReason, type RegbyErrorReason } from '@/services/regby/protocol';
+
+interface FailureView {
+  Icon: LucideIcon;
+  title: string;
+}
+
+/** The refusals the Figma draws each its own way. */
+const FAILURE_VIEW: Partial<Record<RegbyErrorReason, FailureView>> = {
+  regby_code_expired: { Icon: Clock, title: 'Code expired' },
+  regby_code_locked: { Icon: Lock, title: 'Code locked' },
+  regby_code_not_found: { Icon: Search, title: 'Code not found' },
+};
+
+/** Everything else: a code already redeemed, or the relays failing us. */
+const GENERIC_FAILURE: FailureView = { Icon: TriangleAlert, title: 'Error encountered' };
 
 interface CustomerRedeemScreenProps {
   onRedeem: (code: string) => Promise<void>;
@@ -36,7 +51,9 @@ export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenP
       throw err;
     }
   };
-  const { run, busy, error, setError } = useAction(redeem, regbyErrorText);
+  const { run, busy, error, setError } = useAction(redeem, regbyErrorReason);
+  const failure =
+    error === null ? null : { ...(FAILURE_VIEW[error] ?? GENERIC_FAILURE), text: REGBY_ERROR_TEXT[error] };
 
   const onChange = (next: string) => {
     setDigits(next);
@@ -47,21 +64,23 @@ export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenP
   return (
     <Page role="customer">
       <ScreenHeader role="customer" onBack={error === null ? onBack : () => setError(null)} />
-      {/* Progress and errors sit in the frame the text will fill, so the code
-          and Paste below keep the content screen's layout. */}
+      {/* Progress and failures sit in the frame the text will fill, so the
+          code and Paste below keep the content screen's layout. */}
       <ContentPanel
         head={
-          error !== null && (
-            <span className="content-panel-error">
-              <TriangleAlert size={ICON_SIZE} aria-hidden />
-              ERROR
+          failure && (
+            <span className="content-panel-failure-title">
+              <failure.Icon size={ICON_SIZE} />
+              {failure.title}
             </span>
           )
         }
         foot={
-          error !== null && (
-            <p className="content-panel-error-text" role="alert">
-              {error}
+          failure && (
+            <p className="content-panel-failure-text" role="alert">
+              {/* The title sits in another strip; announce it with the instruction. */}
+              <span className="visually-hidden">{failure.title}. </span>
+              {failure.text}
             </p>
           )
         }
@@ -72,6 +91,11 @@ export function CustomerRedeemScreen({ onRedeem, onBack }: CustomerRedeemScreenP
               <Spinner />
               Redeeming…
             </p>
+          </div>
+        )}
+        {failure && (
+          <div className="content-panel-failure-icon">
+            <failure.Icon />
           </div>
         )}
       </ContentPanel>
