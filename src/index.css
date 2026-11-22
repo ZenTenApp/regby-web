@@ -964,14 +964,14 @@ img.qr {
 /* Sender strip, text, copy strip. Empty on the redeem screen and filled on
    the content screen, so the text arrives in place. */
 .content-panel {
-  /* What the screen needs beside the panel, so the panel gives way first on
-     a shrunk card. */
-  --panel-room: 241px;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-  /* Figma: 448x332. */
-  height: clamp(120px, 100cqh - var(--panel-room), 249px);
+  /* Figma: 448x332. The one part of the screen that gives way: it takes what
+     the header and code leave, so the card never overflows at full size and
+     scrolls only once the panel is at its minimum. A fixed budget for the
+     rest went stale with every spacing change and showed as a 2 px scrollbar. */
+  flex: 0 1 249px;
+  min-height: 120px;
   margin-top: 16px;
   overflow: hidden;
   border: 1.5px solid var(--hairline);
