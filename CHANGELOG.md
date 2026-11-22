@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1](https://github.com/ZenTenApp/regby-web/compare/v1.10.0...v1.10.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* stop the 2 px scroll on the customer screens ([c1ebe86](https://github.com/ZenTenApp/regby-web/commit/c1ebe863144a13af526712d332803acd831f22b1))
+
 # [1.10.0](https://github.com/ZenTenApp/regby-web/compare/v1.9.0...v1.10.0) (2026-11-22)
 
 
