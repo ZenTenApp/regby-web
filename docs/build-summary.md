@@ -33,6 +33,7 @@ project root and this spec:
 | Stack | Vite, React 19, strict TS, `nostr-tools`, `qrcode`, `lucide-react`, `@fontsource/inter` | Matches `chat`; strict CSP means no CDN fonts |
 | Login options | Generate KeyPair, Login with Signer (NIP-07), Login with SSH Key | The Login PNG shows all three (its "Paste SSH Key" renamed); spec names the last two |
 | SSH derivation | Ed25519 seed, BIP39 entropy, NIP-06 `m/44'/1237'/0'/0/0` | Same npub as chat and usdt-pay; pinned by a test using chat's vectors |
+| SSH labels | Wallet Label (required) is `meltify -s`; Card Label (optional, Skip) is the BIP39 passphrase | Figma's four-step SSH login; Cards as in zentenpay, pinned by the official BIP39 vector |
 | Unencrypted SSH keys | Refused | Same rule as chat |
 | bcrypt | In a module Web Worker, terminated after login | Seconds-long synchronous call; terminating drops cloned secrets |
 | Secrets | PEM and passphrase live in DOM refs, never React state | Ported discipline from chat |

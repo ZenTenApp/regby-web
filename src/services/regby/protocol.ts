@@ -47,13 +47,17 @@ export type RegbyErrorReason =
   | 'malformed'
   | 'signer';
 
+/** A refused redeem leaves nothing to retry with that code, whichever
+ *  refusal it was; the redeem screen's title tells them apart. */
+const NEW_CODE_TEXT = 'Request and enter new code.';
+
 /** Our own text for every reason. The broker sends no text, by design. */
 export const REGBY_ERROR_TEXT: Record<RegbyErrorReason, string> = {
   regby_code_busy: 'ReGBY is busy right now. Try again in a moment.',
-  regby_code_not_found: 'Invalid ReGBY Code. Please input the correct code.',
-  regby_code_expired: 'This ReGBY Code has expired. Ask for a new one.',
-  regby_code_already_redeemed: 'This ReGBY Code was already used.',
-  regby_code_locked: 'This ReGBY Code is no longer valid. Ask for a new one.',
+  regby_code_not_found: NEW_CODE_TEXT,
+  regby_code_expired: NEW_CODE_TEXT,
+  regby_code_already_redeemed: NEW_CODE_TEXT,
+  regby_code_locked: NEW_CODE_TEXT,
   'too-long': 'This text is too long for ReGBY. Shorten it and try again.',
   binary: 'This text contains characters ReGBY cannot carry.',
   'no-relay': 'Could not reach the ReGBY relays. Check your connection.',
@@ -73,8 +77,13 @@ export class RegbyError extends Error {
   }
 }
 
+/** Why a ReGBY call failed; anything not ours reads as an unreadable answer. */
+export function regbyErrorReason(err: unknown): RegbyErrorReason {
+  return err instanceof RegbyError ? err.reason : 'malformed';
+}
+
 export function regbyErrorText(err: unknown): string {
-  return err instanceof RegbyError ? err.message : REGBY_ERROR_TEXT.malformed;
+  return REGBY_ERROR_TEXT[regbyErrorReason(err)];
 }
 
 const CODE_RE = new RegExp(`^\\d{${REGBY_CODE_LENGTH}}$`);

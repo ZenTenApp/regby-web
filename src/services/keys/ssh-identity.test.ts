@@ -17,7 +17,7 @@ function fixture(name: string): string {
 }
 
 function pubkeyOf(file: string, passphrase: string): string {
-  return getPublicKey(nostrKeyFromSshSeed(convertOpenSSHEd25519(fixture(file), passphrase)));
+  return getPublicKey(nostrKeyFromSshSeed(convertOpenSSHEd25519(fixture(file), passphrase), ''));
 }
 
 describe('SSH key to Nostr identity', () => {

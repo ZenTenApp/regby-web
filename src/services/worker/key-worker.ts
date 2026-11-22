@@ -9,17 +9,19 @@ import { nostrKeyFromSshSeed } from '@/services/keys/nip06';
 import { deriveSubaccountSeed } from '@/services/keys/subaccount';
 import { convertOpenSSHEd25519, estimateDecryptSeconds } from '@/services/ssh';
 
-import type { KeyWorkerRequest, KeyWorkerResponse } from './protocol';
+import type { KeyWorkerRequest, KeyWorkerRequestMap, KeyWorkerResponse } from './protocol';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
-/** Empty `subaccount` means the key itself, as in chat. */
-function sshSecretKey(pem: string, passphrase: string, subaccount: string): Uint8Array {
+/** Empty `subaccount` means the key itself, as in chat; empty `cardLabel`
+ *  means the wallet itself, no Card. Takes the request whole: the two labels
+ *  are both strings, and swapped they open another identity without error. */
+function sshSecretKey({ pem, passphrase, subaccount, cardLabel }: KeyWorkerRequestMap['ssh-login']): Uint8Array {
   const seed = convertOpenSSHEd25519(pem, passphrase);
   let root = seed;
   try {
     if (subaccount !== '') root = deriveSubaccountSeed(seed, subaccount);
-    return nostrKeyFromSshSeed(root);
+    return nostrKeyFromSshSeed(root, cardLabel);
   } finally {
     wipe(seed, root);
   }
@@ -41,7 +43,7 @@ function handle(request: KeyWorkerRequest): KeyWorkerResponse {
         id: request.id,
         ok: true,
         kind: 'ssh-login',
-        result: { secretKey: sshSecretKey(request.pem, request.passphrase, request.subaccount) },
+        result: { secretKey: sshSecretKey(request) },
       };
   }
 }

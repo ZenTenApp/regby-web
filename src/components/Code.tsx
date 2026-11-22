@@ -47,7 +47,6 @@ export function CodeDisplay({ code }: { code: string }) {
 interface CodeInputProps {
   value: string;
   onChange: (digits: string) => void;
-  invalid: boolean;
   disabled: boolean;
 }
 
@@ -58,7 +57,7 @@ interface CodeInputProps {
  * keyboard needs no click first. Never autofocused: the on-screen keyboard
  * stays down until the customer taps a box, so it does not cover the screen.
  */
-export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps) {
+export function CodeInput({ value, onChange, disabled }: CodeInputProps) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const [pasteBlocked, setPasteBlocked] = useState(false);
   const focus = (group: number) => refs.current[Math.max(0, Math.min(group, GROUP_COUNT - 1))]?.focus();
@@ -140,7 +139,7 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
 
   return (
     <div className="code-input" data-keyboard-reveal="">
-      <div className="code-groups" data-invalid={invalid}>
+      <div className="code-groups">
         {GROUPS.map((group) => (
           <div key={group} className="code-group" style={barColor(group)}>
             <input
@@ -165,7 +164,7 @@ export function CodeInput({ value, onChange, invalid, disabled }: CodeInputProps
       </div>
       <button
         type="button"
-        className="btn code-paste"
+        className="btn code-action"
         disabled={disabled}
         onClick={() => void pasteButton()}
       >
